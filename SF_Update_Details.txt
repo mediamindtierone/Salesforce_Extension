@@ -1,0 +1,10 @@
+[X]Iteration Column
+[X]in support view when opening a case in a new tab apply the tab time.
+[X]make it work in Support View
+[X]make it work across all tiers - tabbing and time display on tab
+[X]remove advanced option and dynamic option
+[ ]improve UI look
+[ ]upload to GIThub
+[ ]enable or disable blink
+[ ]update the Engineers/Agent's Total Case Handled 
+[ ]add rule priority

@@ -1,0 +1,27 @@
+{
+  "manifest_version": 2,
+  "name": "dg MediaMind Support Extension",
+  "description": "This extension is for help with Support usage of SF",
+  "version": "1.0",
+
+  "permissions": [
+    "<all_urls>","webRequest","webRequestBlocking","cookies", "tabs","storage", "unlimitedStorage"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://c.na8.visual.force.com/*","https://na8.salesforce.com/*"],      
+      "js": ["sfmod.js"],
+	  "all_frames": true,
+	  "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+		"images/stat.png",
+		"images/settingIcon.png",
+		"images/dgBack.png",
+		"images/dgLogo.png"
+  ],
+  "browser_action": {
+    "default_icon": "icon.png"    
+  }  
+}
