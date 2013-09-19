@@ -8,12 +8,16 @@ var accountNamePerCase = document.getElementsByClassName("x-grid3-cell-inner x-g
 var pubNamePerCase = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-00NC0000005C8T4");
 var caseOwner = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-00NC0000005C8Sw");
 var iterationCount = document.getElementsByClassName("x-grid3-col x-grid3-cell x-grid3-td-00NC0000005C8Tc");
+var productCategory = document.getElementsByClassName("x-grid3-col x-grid3-cell x-grid3-td-00NC0000005C8T2");
+
 var tier;
+var ownerName;
 var definedVariables = [
 	{variable:"#NOW", value:"new Date()"},
 	{variable:"#CASESLA", value:"new Date(datePerCase[i].textContent)"},
 	{variable:"#ACCOUNT", value:"accountNamePerCase[i].textContent"},
 	{variable:"#PUBNAME", value:"pubNamePerCase[i].textContent"},
+	{variable:"#PRODCAT", value:"productCategory[i].textContent"},
 	{variable:"#ME", value:"window.top.document.getElementById('userNavLabel').textContent"},
 	{variable:"#CASEOWNER", value:'alterName(caseOwner[i].innerText)'},
 	{variable:"#ITERCNT", value:'alterName(iterationCount[i].innerText)'}
@@ -180,7 +184,7 @@ function statPortion() {
 }
 
 function showStatFunc() {
-	nCase = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-CASES_STATUS");
+	var nCase = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-CASES_STATUS");
 	var hStat = aStat = nStat = rStat = dStat = 0;
 	for (var q=0; q<nCase.length; q++) {
 		switch (nCase[q].textContent) {
@@ -329,7 +333,16 @@ function sf_write(val, willreplace, filename) {
 }
 
 function sf_append(val, filename) {	
+	var temp01 = initSettings.rules[initSettings.rules.length-1];
+	var temp02 = initSettings.rules[initSettings.rules.length-2];
+	var temp03 = initSettings.rules[initSettings.rules.length-3];
+	initSettings.rules.splice(initSettings.rules.length-1, 1);
+	initSettings.rules.splice(initSettings.rules.length-1, 1);
+	initSettings.rules.splice(initSettings.rules.length-1, 1);
 	initSettings.rules.push(val);
+	initSettings.rules.push(temp03);
+	initSettings.rules.push(temp02);
+	initSettings.rules.push(temp01);
 	sf_delete(labels);
 	sf_write(JSON.stringify(initSettings), false, labels)
 }
@@ -360,8 +373,9 @@ function initialSettings() { //this holds the default value
 			{caption:"Case exceed in (#XX mins)", rule:"(#CASESLA - #NOW)/60000 < #XX", color:"FF9700", editMode:2, variable:"#XX", value:"30"},
 			{caption:"Case exceed in (#XX mins)", rule:"(#CASESLA - #NOW)/60000 < #XX", color:"FF6200", editMode:2, variable:"#XX", value:"15"},
 			{caption:"Case Exceeded", rule:"#CASESLA - #NOW < #XX", color:"CC0000", editMode:2, variable:"#XX", value:"0"},
-			{caption:"Assigned Cases", rule:"#ME.match(#CASEOWNER)", color:"CC97CC", editMode:2, variable:"", value:""},
-			{caption:"Interation Count >", rule:"#ITERCNT > #XX", color:"1797c0", editMode:4, variable:"#XX", value:"4"}
+			{caption:"Iteration Count >", rule:"#ITERCNT > #XX", color:"2cefff", editMode:4, variable:"#XX", value:"4"},
+			{caption:"Assigned Cases", rule:"#ME.match(#CASEOWNER)", color:"2c86ff", editMode:2, variable:"", value:""},
+			{caption:"Smart Trading", rule:"#PRODCAT.match('#XX')", color:"85ff2c", editMode:2, variable:"#XX", value:"Smart Trading"}
 		]
 	};
 	initSettings = sfExtension;
@@ -550,7 +564,6 @@ function settingWindow(e) {
 		textColor[i].size = 2;
 		textColor[i].setAttribute('colorid', 'sf|'+i)
 		textColor[i].onchange = function() {
-			console.log("CHANGING: attribute " + this.getAttribute("colorid") + " value: " + this.value);
 			top.document.getElementById(this.getAttribute("colorid")).style.backgroundColor = "#"+this.value;
 			var flag = this.getAttribute("colorid").split("|")[1];
 			initSettings.rules[flag].color = this.value;
@@ -820,7 +833,6 @@ function alterName(name) {
 		tempCaseOwner = name.split(", ");
 		cw = tempCaseOwner[1] + " " + tempCaseOwner[0];
 	}
-	console.log("name is " + cw);
 	return cw;
 }
 
@@ -840,6 +852,7 @@ function getAllCaseStats() {
 	var caseTabs = getAllTabs();
 	var caseNos=document.getElementsByClassName("x-grid3-col-CASES_CASE_NUMBER");
 	var slas=document.getElementsByClassName("x-grid3-col-00NC0000005BOuj");
+	var caseColor = "FFFFFF";
 	firstCase = document.getElementsByClassName("x-grid3-row-first");
 	rules = JSON.parse(_RESULT).rules;
 	tier = document.getElementById(params.fcf+"_listSelect").selectedOptions[0].innerText;
@@ -867,15 +880,18 @@ function getAllCaseStats() {
 					for(var vars=0 ; vars<definedVariables.length ; vars++) {
 						rule = rule.replace(definedVariables[vars].variable, definedVariables[vars].value);
 					}
+					try{
 					if(eval(rule) && datePerCase[i]) {
 						datePerCase[i].parentElement.parentElement.style.background="#"+ rules[itr].color
 					}
+					}catch(e){}
 				}
 				initSLA_NOW(slas[i].innerText);
 				if(window.top.document.getElementById('userNavLabel').textContent.match( alterName(caseOwner[i].innerText) )){
 					initSLA_NOW(slas[i].innerText);
 					if(getSLA_NOW()< 60) {
-						blinkDiv(datePerCase[i].parentElement.parentElement, caseassign);
+						caseColor = rules[rules.length-2].color;//GET THE ASSIGNED CASE COLOR -> maybe add it on the data.settings.assignedColor
+						blinkDiv(datePerCase[i].parentElement.parentElement, caseColor);
 					}
 				}
 			}	
