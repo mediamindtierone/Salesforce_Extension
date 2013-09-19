@@ -4,7 +4,10 @@
 [X]make it work across all tiers - tabbing and time display on tab
 [X]remove advanced option and dynamic option
 [ ]improve UI look
-[ ]upload to GIThub
+[X]upload to GIThub
 [ ]enable or disable blink
-[ ]update the Engineers/Agent's Total Case Handled 
+[X]update the Engineers/Agent's Total Case Handled 
 [ ]add rule priority
+[ ]if the color is dark the text can't be read
+[X]add smart trading
+[X]added color input
