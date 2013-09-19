@@ -9,7 +9,6 @@ var pubNamePerCase = document.getElementsByClassName("x-grid3-cell-inner x-grid3
 var caseOwner = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-00NC0000005C8Sw");
 var iterationCount = document.getElementsByClassName("x-grid3-col x-grid3-cell x-grid3-td-00NC0000005C8Tc");
 var productCategory = document.getElementsByClassName("x-grid3-col x-grid3-cell x-grid3-td-00NC0000005C8T2");
-
 var tier;
 var ownerName;
 var definedVariables = [
@@ -33,7 +32,6 @@ var _RESULT;
 var initSettings;
 var SLA, NOW, RES;
 var days_remaining, minutes_remaining, total_result;
-
 var regex = /[?&]([^=#]+)=([^&#]*)/g, 
 	url = window.location.href, 
 	params = {}, 
@@ -366,16 +364,16 @@ function initialSettings() { //this holds the default value
 	//planning to have an advanced mode and assigned an editable mode of 2. this would let the user be more flexible on the rules
 	var sfExtension = {
 		settings:{
-			name:"Salesforce Extension", version:"1.0", refreshRate:"60000"
+			name:"Salesforce Extension", version:"1.0", refreshRate:"60000", assignedCase:"#2c86ff"
 		},
 		rules:[
-			{caption:"Case exceed in (mins)", rule:"(#CASESLA - #NOW)/60000 < #XX", color:"FFFF00", editMode:4, variable:"#XX", value:"60"},
-			{caption:"Case exceed in (#XX mins)", rule:"(#CASESLA - #NOW)/60000 < #XX", color:"FF9700", editMode:2, variable:"#XX", value:"30"},
-			{caption:"Case exceed in (#XX mins)", rule:"(#CASESLA - #NOW)/60000 < #XX", color:"FF6200", editMode:2, variable:"#XX", value:"15"},
-			{caption:"Case Exceeded", rule:"#CASESLA - #NOW < #XX", color:"CC0000", editMode:2, variable:"#XX", value:"0"},
-			{caption:"Iteration Count >", rule:"#ITERCNT > #XX", color:"2cefff", editMode:4, variable:"#XX", value:"4"},
-			{caption:"Assigned Cases", rule:"#ME.match(#CASEOWNER)", color:"2c86ff", editMode:2, variable:"", value:""},
-			{caption:"Smart Trading", rule:"#PRODCAT.match('#XX')", color:"85ff2c", editMode:2, variable:"#XX", value:"Smart Trading"}
+			{caption:"Case exceed in (mins)", rule:"(#CASESLA - #NOW)/60000 < #XX", color:"#FFFF00", editMode:4, variable:"#XX", value:"60"},
+			{caption:"Case exceed in (#XX mins)", rule:"(#CASESLA - #NOW)/60000 < #XX", color:"#FF9700", editMode:2, variable:"#XX", value:"30"},
+			{caption:"Case exceed in (#XX mins)", rule:"(#CASESLA - #NOW)/60000 < #XX", color:"#FF6200", editMode:2, variable:"#XX", value:"15"},
+			{caption:"Case Exceeded", rule:"#CASESLA - #NOW < #XX", color:"#CC0000", editMode:2, variable:"#XX", value:"0"},
+			{caption:"Iteration Count >", rule:"#ITERCNT > #XX", color:"#2cefff", editMode:4, variable:"#XX", value:"4"},
+			{caption:"Assigned Cases", rule:"#ME.match(#CASEOWNER)", color:"#2c86ff", editMode:2, variable:"", value:""},
+			{caption:"Smart Trading", rule:"#PRODCAT.match('#XX')", color:"#85ff2c", editMode:2, variable:"#XX", value:"Smart Trading"}
 		]
 	};
 	initSettings = sfExtension;
@@ -432,7 +430,7 @@ function settingWindow(e) {
 	settingsContainer.style.display = e;
 	settingsContainer.style.zIndex = "10000";
 	settingsContainer.style.height = "auto";
-	settingsContainer.style.width = "500px";
+	settingsContainer.style.width = "400px";
 	settingsContainer.style.zIndex="99999";
 	settingsContainer.style.textAlign = "center";
 	settingsContainer.style.background = "white";
@@ -533,7 +531,6 @@ function settingWindow(e) {
 	var captionHolder = [];
 	var valueHolder = [];
 	var textColor = [];
-	var color = [];
 	var rule = [];
 	var deleteRule = [];
 	settingsContainer.appendChild(headerContainer);
@@ -547,33 +544,26 @@ function settingWindow(e) {
 		settings.style.border = "1px solid #C0A2C7";
 		captionHolder[i] = document.createElement("div");
 		textColor[i] = document.createElement("input");
-		color[i] = document.createElement("div");
 		rule[i] = document.createElement("input");
 		var captionLabel = document.createElement("div");
 		captionLabel.innerText = initSettings.rules[i].caption.replace(initSettings.rules[i].variable, initSettings.rules[i].value);
 		captionLabel.style.display = "inline";
-		captionHolder[i].setAttribute("style", "display:table-cell");
+		captionHolder[i].style.float ="left";
 		captionHolder[i].style.textAlign = "left";
+		captionHolder[i].style.margin = "3px";
 		captionHolder[i].appendChild(captionLabel);
-		textColor[i].setAttribute('type',"text");
-		textColor[i].setAttribute("style", "display:table-cell");
+		textColor[i].setAttribute("type","color");
+		textColor[i].setAttribute("class","color");
+		textColor[i].style.display ="table-cell";
 		textColor[i].style.width = "100px";
+		textColor[i].style.float = "right";
 		textColor[i].style.marginRight = "5px";
 		textColor[i].value = initSettings.rules[i].color;
-		textColor[i].maxLength = 6;
-		textColor[i].size = 2;
 		textColor[i].setAttribute('colorid', 'sf|'+i)
 		textColor[i].onchange = function() {
-			top.document.getElementById(this.getAttribute("colorid")).style.backgroundColor = "#"+this.value;
 			var flag = this.getAttribute("colorid").split("|")[1];
-			initSettings.rules[flag].color = this.value;
+			initSettings.rules[flag].color = this.value; 
 		}
-		color[i].setAttribute("style", "display:table-cell;");
-		color[i].style.backgroundColor = "#"+initSettings.rules[i].color;
-		color[i].setAttribute("id", "sf|"+i)
-		color[i].style.height = "15px";
-		color[i].style.width = "45px";
-		color[i].style.borderStyle = 'double';
 		rule[i] = document.createElement("input");
 		rule[i].style.width = "70%";
 		rule[i].value = initSettings.rules[i].rule;
@@ -612,7 +602,6 @@ function settingWindow(e) {
 		}
 		topSetCont.appendChild(captionHolder[i]);
 		topSetCont.appendChild(textColor[i]);
-		topSetCont.appendChild(color[i]);
 		if(initSettings.rules[i].editMode==1 || initSettings.rules[i].editMode==3) {
 			topSetCont.appendChild(deleteRule[i]);
 		}
@@ -802,9 +791,9 @@ function createLegends(){
 	for(var i=0 ; i<initSettings.rules.length ; i++) {
 		var caption = initSettings.rules[i].caption.replace(initSettings.rules[i].variable, initSettings.rules[i].value);
 		if(initSettings.rules[i].editMode == 1 || initSettings.rules[i].editMode == 4) {
-			legendsDiv.innerHTML+="<span style=\"border-radius:3px;padding:4px;display:inline-block;background:#"+initSettings.rules[i].color+";\">"+ caption + " " + initSettings.rules[i].value + "</span>&nbsp;&nbsp;";
+			legendsDiv.innerHTML+="<span style=\"border-radius:3px;padding:4px;display:inline-block;background:"+initSettings.rules[i].color+";\">"+ caption + " " + initSettings.rules[i].value + "</span>&nbsp;&nbsp;";
 		} else {
-			legendsDiv.innerHTML+="<span style=\"border-radius:3px;padding:4px;display:inline-block;background:#"+initSettings.rules[i].color+";\">"+ caption +"</span>&nbsp;&nbsp;";
+			legendsDiv.innerHTML+="<span style=\"border-radius:3px;padding:4px;display:inline-block;background:"+initSettings.rules[i].color+";\">"+ caption +"</span>&nbsp;&nbsp;";
 		}
 	}
 	return legendsDiv;
@@ -882,7 +871,7 @@ function getAllCaseStats() {
 					}
 					try{
 					if(eval(rule) && datePerCase[i]) {
-						datePerCase[i].parentElement.parentElement.style.background="#"+ rules[itr].color
+						datePerCase[i].parentElement.parentElement.style.background=rules[itr].color
 					}
 					}catch(e){}
 				}
@@ -914,7 +903,7 @@ function getAllCaseStats() {
 							rule = rule.replace(rules[itr].variable, rules[itr].value);
 						}
 						if(eval(rule) && datePerCase[i]) {
-							caseTabs[j].parentElement.parentElement.parentElement.parentElement.style.background="#"+rules[itr].color;
+							caseTabs[j].parentElement.parentElement.parentElement.parentElement.style.background=rules[itr].color;
 						}
 					}
 				}
@@ -942,7 +931,7 @@ function getSLA_NOW(){
 //blinks your case that is going to exceed within a specified time
 function blinkDiv(element, color) {
 	if(getCurrentSeconds()%2){
-		element.style.background="#"+color;
+		element.style.background=color;
 	}else{
 		element.style.background="white";
 	}
