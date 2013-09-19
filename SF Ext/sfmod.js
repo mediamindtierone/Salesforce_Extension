@@ -746,7 +746,7 @@ function buildAddLabels(settingsContainer, dimmer) {
 				val.variable = varText.value;
 				val.value = valueText.value;
 			}else{
-				val.rule = "#ACCOUNT.match('#XX')";//"#ACCOUNT.match('#XX') || #PUBNAME.match('#XX')";
+				val.rule = "#ACCOUNT.match('#XX') || #PUBNAME.match('#XX')";//"#ACCOUNT.match('#XX')";//
 				val.editMode = 3;
 				val.variable = "#XX";
 				val.value = captionText.value;
