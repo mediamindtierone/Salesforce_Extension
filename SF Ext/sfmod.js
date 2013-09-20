@@ -193,7 +193,16 @@ function showStatFunc() {
 			case "De-escalated to Tier 1" : dStat++; break;
 		}
 	}			
-	ownerName = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-OWNER_NAME");
+	ownerName = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-00NC0000005C8Sw");
+	tier = document.getElementById(params.fcf+"_listSelect").selectedOptions[0].innerText;
+	if(tier=="Online Support Tier 1") {
+		ownerName = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-OWNER_NAME");
+	}else if(tier=="Online Support Tier 2") {
+		ownerName = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-00NC0000005C8Sx");
+	}else if(tier=="Online Support Tier 3") {
+		ownerName = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-OWNER_NAME");
+	}
+	
 	var ownerArray = [];
 	for (var r=0;r<ownerName.length; r++) {
 		ownerArray.push(ownerName[r].textContent);
@@ -207,7 +216,7 @@ function getOwner(vals) {
 	var tempNum=0;
 	nArray = []
 	for (var w = 0; w < vals.length; w++) {
-		if (vals[w] != undefined && vals[w] != "Online Support Tier 1") {
+		if (vals[w] != undefined && vals[w] != "Online Support Tier 1" && vals[w].length > 1) {
 			cnt=0;
 			for (var g = 0; g<ownerName.length; g++) {
 				if (ownerName[g].textContent.match(vals[w])) {					
@@ -638,7 +647,7 @@ function buildAddLabels(settingsContainer, dimmer) {
 	colorLabel.style.display = "table-cell";
 	colorLabel.style.width = "100px";
 	var colorText = document.createElement("input");
-	colorText.type = "text";
+	colorText.type = "color";
 	colorText.name = "color";
 	colorHolder.appendChild(colorLabel);
 	colorHolder.appendChild(colorText);
@@ -735,7 +744,7 @@ function buildAddLabels(settingsContainer, dimmer) {
 				val.variable = varText.value;
 				val.value = valueText.value;
 			}else{
-				val.rule = "#ACCOUNT.match('#XX') || #PUBNAME.match('#XX')";//"#ACCOUNT.match('#XX')";//
+				val.rule = "#ACCOUNT.toLowerCase().match('#XX'.toLowerCase()) || #PUBNAME.toLowerCase().match('#XX'.toLowerCase())";//"#ACCOUNT.match('#XX')";//
 				val.editMode = 3;
 				val.variable = "#XX";
 				val.value = captionText.value;
