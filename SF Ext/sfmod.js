@@ -193,7 +193,16 @@ function showStatFunc() {
 			case "De-escalated to Tier 1" : dStat++; break;
 		}
 	}			
-	ownerName = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-OWNER_NAME");
+	ownerName = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-00NC0000005C8Sw");
+	tier = document.getElementById(params.fcf+"_listSelect").selectedOptions[0].innerText;
+	if(tier=="Online Support Tier 1") {
+		ownerName = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-OWNER_NAME");
+	}else if(tier=="Online Support Tier 2") {
+		ownerName = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-00NC0000005C8Sx");
+	}else if(tier=="Online Support Tier 3") {
+		ownerName = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-OWNER_NAME");
+	}
+	
 	var ownerArray = [];
 	for (var r=0;r<ownerName.length; r++) {
 		ownerArray.push(ownerName[r].textContent);
@@ -207,7 +216,7 @@ function getOwner(vals) {
 	var tempNum=0;
 	nArray = []
 	for (var w = 0; w < vals.length; w++) {
-		if (vals[w] != undefined && vals[w] != "Online Support Tier 1") {
+		if (vals[w] != undefined && vals[w] != "Online Support Tier 1" && vals[w].length > 1) {
 			cnt=0;
 			for (var g = 0; g<ownerName.length; g++) {
 				if (ownerName[g].textContent.match(vals[w])) {					
@@ -331,16 +340,20 @@ function sf_write(val, willreplace, filename) {
 }
 
 function sf_append(val, filename) {	
-	var temp01 = initSettings.rules[initSettings.rules.length-1];
-	var temp02 = initSettings.rules[initSettings.rules.length-2];
-	var temp03 = initSettings.rules[initSettings.rules.length-3];
-	initSettings.rules.splice(initSettings.rules.length-1, 1);
-	initSettings.rules.splice(initSettings.rules.length-1, 1);
-	initSettings.rules.splice(initSettings.rules.length-1, 1);
+	var itr = initSettings.settings.reserveRules;
+	var temp = [];
+	for(var x=0 ; x<itr ;x++) {
+		temp[x] = initSettings.rules[initSettings.rules.length- (x+1) ];
+		console.log(">> " + temp[x]);
+	}
+	for(var x=0 ; x<itr ; x++)  {
+		initSettings.rules.splice(initSettings.rules.length-1, 1);
+	}
 	initSettings.rules.push(val);
-	initSettings.rules.push(temp03);
-	initSettings.rules.push(temp02);
-	initSettings.rules.push(temp01);
+	for(var x=itr-1 ; x>-1 ; x--) {
+		console.log(temp[x]);
+		initSettings.rules.push(temp[x]);
+	}
 	sf_delete(labels);
 	sf_write(JSON.stringify(initSettings), false, labels)
 }
@@ -358,13 +371,14 @@ function sf_delete(filename) {
 	setTimeout(_DELETEFILE(filename), 2000);
 }
 
-function initialSettings() { //this holds the default value
+function initialSettings() { 
+	//this holds the default value
 	//new rules will have an editable mode of 3 and will take the caption as the account and publisher match
 	//rules with editable mode of 1 will have a variable that would let the user edit that particular variable
 	//planning to have an advanced mode and assigned an editable mode of 2. this would let the user be more flexible on the rules
 	var sfExtension = {
 		settings:{
-			name:"Salesforce Extension", version:"1.0", refreshRate:"60000", assignedCase:"#2c86ff"
+			name:"Salesforce Extension", version:"1.0", refreshRate:"60000", assignedCase:"#2c86ff", reserveRules:"3"
 		},
 		rules:[
 			{caption:"Case exceed in (mins)", rule:"(#CASESLA - #NOW)/60000 < #XX", color:"#FFFF00", editMode:4, variable:"#XX", value:"60"},
@@ -505,10 +519,12 @@ function settingWindow(e) {
 	var saveButton = createButton("save");
 	saveButton.onclick = function() { 
 		setTimeout(sf_write(JSON.stringify(initSettings), true, labels), 1000);
+		/*
 		settingsContainer.style.display = "none";
 		dimmer.style.display = "none";
 		settingsContainer.remove();
 		dimmer.remove();
+		*/
 		refreshRate(initSettings.settings.refreshRate);
 	}
 	var saveCloseButton = createButton("save and close");
@@ -638,7 +654,7 @@ function buildAddLabels(settingsContainer, dimmer) {
 	colorLabel.style.display = "table-cell";
 	colorLabel.style.width = "100px";
 	var colorText = document.createElement("input");
-	colorText.type = "text";
+	colorText.type = "color";
 	colorText.name = "color";
 	colorHolder.appendChild(colorLabel);
 	colorHolder.appendChild(colorText);
@@ -735,7 +751,7 @@ function buildAddLabels(settingsContainer, dimmer) {
 				val.variable = varText.value;
 				val.value = valueText.value;
 			}else{
-				val.rule = "#ACCOUNT.match('#XX') || #PUBNAME.match('#XX')";//"#ACCOUNT.match('#XX')";//
+				val.rule = "#ACCOUNT.toLowerCase().match('#XX'.toLowerCase()) || #PUBNAME.toLowerCase().match('#XX'.toLowerCase())";//"#ACCOUNT.match('#XX')";//
 				val.editMode = 3;
 				val.variable = "#XX";
 				val.value = captionText.value;
