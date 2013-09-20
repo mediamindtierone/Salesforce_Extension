@@ -11,4 +11,3 @@
 [ ]if the color is dark the text can't be read
 [X]add smart trading
 [X]added color input
-

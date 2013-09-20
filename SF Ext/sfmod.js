@@ -1,5 +1,7 @@
 /*
+
 	This plugin is using file handling for HTML5, please see URL: http://www.html5rocks.com/en/tutorials/file/filesystem/#toc-introduction
+	
 */
 
 var sfRefresh;
@@ -340,16 +342,20 @@ function sf_write(val, willreplace, filename) {
 }
 
 function sf_append(val, filename) {	
-	var temp01 = initSettings.rules[initSettings.rules.length-1];
-	var temp02 = initSettings.rules[initSettings.rules.length-2];
-	var temp03 = initSettings.rules[initSettings.rules.length-3];
-	initSettings.rules.splice(initSettings.rules.length-1, 1);
-	initSettings.rules.splice(initSettings.rules.length-1, 1);
-	initSettings.rules.splice(initSettings.rules.length-1, 1);
+	var itr = initSettings.settings.reserveRules;
+	var temp = [];
+	for(var x=0 ; x<itr ;x++) {
+		temp[x] = initSettings.rules[initSettings.rules.length- (x+1) ];
+		console.log(">> " + temp[x]);
+	}
+	for(var x=0 ; x<itr ; x++)  {
+		initSettings.rules.splice(initSettings.rules.length-1, 1);
+	}
 	initSettings.rules.push(val);
-	initSettings.rules.push(temp03);
-	initSettings.rules.push(temp02);
-	initSettings.rules.push(temp01);
+	for(var x=itr-1 ; x>-1 ; x--) {
+		console.log(temp[x]);
+		initSettings.rules.push(temp[x]);
+	}
 	sf_delete(labels);
 	sf_write(JSON.stringify(initSettings), false, labels)
 }
@@ -367,13 +373,14 @@ function sf_delete(filename) {
 	setTimeout(_DELETEFILE(filename), 2000);
 }
 
-function initialSettings() { //this holds the default value
+function initialSettings() { 
+	//this holds the default value
 	//new rules will have an editable mode of 3 and will take the caption as the account and publisher match
 	//rules with editable mode of 1 will have a variable that would let the user edit that particular variable
 	//planning to have an advanced mode and assigned an editable mode of 2. this would let the user be more flexible on the rules
 	var sfExtension = {
 		settings:{
-			name:"Salesforce Extension", version:"1.0", refreshRate:"60000", assignedCase:"#2c86ff"
+			name:"Salesforce Extension", version:"1.0", refreshRate:"60000", assignedCase:"#2c86ff", reserveRules:"3"
 		},
 		rules:[
 			{caption:"Case exceed in (mins)", rule:"(#CASESLA - #NOW)/60000 < #XX", color:"#FFFF00", editMode:4, variable:"#XX", value:"60"},
@@ -514,10 +521,6 @@ function settingWindow(e) {
 	var saveButton = createButton("save");
 	saveButton.onclick = function() { 
 		setTimeout(sf_write(JSON.stringify(initSettings), true, labels), 1000);
-		settingsContainer.style.display = "none";
-		dimmer.style.display = "none";
-		settingsContainer.remove();
-		dimmer.remove();
 		refreshRate(initSettings.settings.refreshRate);
 	}
 	var saveCloseButton = createButton("save and close");
