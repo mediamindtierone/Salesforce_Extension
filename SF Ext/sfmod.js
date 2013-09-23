@@ -38,6 +38,7 @@ var regex = /[?&]([^=#]+)=([^&#]*)/g,
 	url = window.location.href, 
 	params = {}, 
 	match; 
+var resetStat = 0;
 while(match = regex.exec(url)) { params[match[1]] = match[2];}
 console.log("sfmod.js loaded "+window.location.href);
 
@@ -478,8 +479,13 @@ function settingWindow(e) {
 		settingsContainer.remove();
 		dimmer.remove();
 	}
-	var resetButton = createButton("reset");
+	var resetButton = createButton("Default Settings");
+	if(resetStat>0) {
+		resetButton.setAttribute('disabled', 'disabled');
+		resetButton.style.display = "none";
+	}
 	resetButton.onclick = function() { 
+		resetStat++;
 		settingsContainer.style.display = "none";
 		dimmer.style.display = "none";
 		settingsContainer.remove();
@@ -519,10 +525,6 @@ function settingWindow(e) {
 	bottomButtonContainer.style.width = "100%";
 	bottomButtonContainer.style.marginTop = "20px";
 	var saveButton = createButton("save");
-	saveButton.onclick = function() { 
-		setTimeout(sf_write(JSON.stringify(initSettings), true, labels), 1000);
-		refreshRate(initSettings.settings.refreshRate);
-	}
 	var saveCloseButton = createButton("save and close");
 	saveCloseButton.onclick = function() { 
 		setTimeout(sf_write(JSON.stringify(initSettings), true, labels), 1000);
@@ -538,7 +540,6 @@ function settingWindow(e) {
 	}
 	bottomButtonContainer.appendChild(refreshHolder);
 	bottomButtonContainer.appendChild(addButton);
-	bottomButtonContainer.appendChild(saveButton);
 	bottomButtonContainer.appendChild(saveCloseButton);
 	var captionHolder = [];
 	var valueHolder = [];
@@ -571,6 +572,7 @@ function settingWindow(e) {
 		textColor[i].style.float = "right";
 		textColor[i].style.marginRight = "5px";
 		textColor[i].value = initSettings.rules[i].color;
+		textColor[i].title = initSettings.rules[i].color;
 		textColor[i].setAttribute('colorid', 'sf|'+i)
 		textColor[i].onchange = function() {
 			var flag = this.getAttribute("colorid").split("|")[1];
@@ -884,6 +886,10 @@ function getAllCaseStats() {
 					try{
 					if(eval(rule) && datePerCase[i]) {
 						datePerCase[i].parentElement.parentElement.style.background=rules[itr].color
+						var diffColor = parseInt('0x' + rules[itr].color.substring(1, rules[itr].color.length));
+						var spanElem = datePerCase[i].getElementsByTagName('span')[0];
+						//if(diffColor<=10066329)
+						//		console.log(spanElem);
 					}
 					}catch(e){}
 				}
