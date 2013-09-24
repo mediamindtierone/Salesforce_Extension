@@ -637,7 +637,7 @@ function buildAddLabels(settingsContainer, dimmer) {
 	var captionHolder = document.createElement("div");
 	captionHolder.style.display = "table";		
 	var captionLabel = document.createElement("div");
-	captionLabel.innerText = "Caption: ";
+	captionLabel.innerText = "Account: ";
 	captionLabel.style.display = "table-cell";
 	captionLabel.style.width = "100px";
 	var captionText = document.createElement("input");
