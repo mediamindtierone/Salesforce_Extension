@@ -7,7 +7,11 @@
 [X]upload to GIThub
 [ ]enable or disable blink
 [X]update the Engineers/Agent's Total Case Handled 
-[ ]add rule priority
+[-]add rule priority
 [ ]if the color is dark the text can't be read
+	- use parseInt('0x' + color_value_without_#)
 [X]add smart trading
 [X]added color input
+[ ]If case will be escalated to upper tier, set the status to the designated tier
+	- create cookies to all handling cases / per browser session maybe
+	- if current reply has Tier2 or Tier3 word in it, flag it. 
