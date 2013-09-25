@@ -15,3 +15,4 @@
 [ ]If case will be escalated to upper tier, set the status to the designated tier
 	- create cookies to all handling cases / per browser session maybe
 	- if current reply has Tier2 or Tier3 word in it, flag it. 
+[ ]new comment - public box is not checked automatically.

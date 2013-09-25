@@ -42,6 +42,28 @@ var resetStat = 0;
 while(match = regex.exec(url)) { params[match[1]] = match[2];}
 console.log("sfmod.js loaded "+window.location.href);
 
+//checks the Public checkbox when creating a new comment
+if (document.getElementById("IsPublished") != undefined) {
+	var a = document.getElementById("IsPublished");
+	a.checked = true
+}
+//
+if (document.getElementById("p6") != undefined) {	
+	if (document.getElementById("p3") != undefined) {
+		var getCase = document.getElementById("p3");
+		var cNum = getCase.value
+	} else {
+		var getCase = document.getElementsByClassName("data2Col");
+		var cNum = getCase[3].textContent
+	}
+	var subjectField = document.getElementById("p6");
+	if (subjectField.value.match(cNum)) {
+		console.log("Match")
+	} else {
+		subjectField.value = subjectField.value+" [" + cNum+ "]"
+	}
+}
+
 if(params.fcf){
 	if (window.requestFileSystem) {
 		sf_read(labels);
@@ -93,27 +115,6 @@ if(params.fcf){
 function refreshSF() {
 	setTimeout(startSLATimerProcess, 4000);
 	document.getElementById(params.fcf+"_wrapper").onmouseover = detectExceedInst;
-}
-//checks the Public checkbox when creating a new comment
-if (document.getElementById("IsPublished") != undefined) {
-	var a = document.getElementById("IsPublished");
-	a.checked = true
-}
-//
-if (document.getElementById("p6") != undefined) {	
-	if (document.getElementById("p3") != undefined) {
-		var getCase = document.getElementById("p3");
-		var cNum = getCase.value
-	} else {
-		var getCase = document.getElementsByClassName("data2Col");
-		var cNum = getCase[3].textContent
-	}
-	var subjectField = document.getElementById("p6");
-	if (subjectField.value.match(cNum)) {
-		console.log("Match")
-	} else {
-		subjectField.value = subjectField.value+" [" + cNum+ "]"
-	}
 }
 
 function detectExceedDelay() {
