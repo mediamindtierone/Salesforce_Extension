@@ -1,7 +1,5 @@
 /*
-
 	This plugin is using file handling for HTML5, please see URL: http://www.html5rocks.com/en/tutorials/file/filesystem/#toc-introduction
-	
 */
 
 var sfRefresh;
@@ -23,6 +21,7 @@ var definedVariables = [
 	{variable:"#CASEOWNER", value:'alterName(caseOwner[i].innerText)'},
 	{variable:"#ITERCNT", value:'alterName(iterationCount[i].innerText)'}
 ];
+var daysInAMonth = [31,28,31,30,31,30,31,31,30,31,30,31];
 window.requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
 var fs = null;
 var labels = "sfExtension_labels.txt";
@@ -32,13 +31,12 @@ var persistenceType = window.TEMPORARY;
 var fileSize = 1024*1024;
 var _RESULT;
 var initSettings;
-var SLA, NOW, RES;
-var days_remaining, minutes_remaining, total_result;
 var regex = /[?&]([^=#]+)=([^&#]*)/g, 
 	url = window.location.href, 
 	params = {}, 
 	match; 
 var resetStat = 0;
+var assignedColor;
 while(match = regex.exec(url)) { params[match[1]] = match[2];}
 console.log("sfmod.js loaded "+window.location.href);
 
@@ -47,7 +45,7 @@ if (document.getElementById("IsPublished") != undefined) {
 	var a = document.getElementById("IsPublished");
 	a.checked = true
 }
-//
+//adds the case number when you send an email.
 if (document.getElementById("p6") != undefined) {	
 	if (document.getElementById("p3") != undefined) {
 		var getCase = document.getElementById("p3");
@@ -80,36 +78,51 @@ if(params.fcf){
 	statPortion();
 	refreshSF();
 	reminder();
-} else {//for individual case view	
-	var caseContainer = document.getElementById("container");
-	var caseStatus;
-	var caseSla;
-	if(typeof(caseContainer)!="undefined"){
-		caseSla = document.getElementById("j_id0:onlinecase:j_id41:sla_tracking:j_id127").textContent;
-		caseStatus = document.getElementById("j_id0:onlinecase:j_id41:j_id102:j_id103").textContent;
-		var timeRemainingHolder = document.createElement("div");
-		timeRemainingHolder.id="timeRemainingHolder";
-		if(document.getElementById(timeRemainingHolder.id))document.getElementById(timeRemainingHolder.id).remove();
-		timeRemainingHolder.style.fontSize = "1.8em";
-		timeRemainingHolder.style.fontWeight = "normal";
-		timeRemainingHolder.style.lineHeight = "1.1em";
-		timeRemainingHolder.style.float = "left";
-		timeRemainingHolder.id = "timeRemainingHolder";
-		caseContainer.appendChild(timeRemainingHolder);
+} else {//for individual case view
+	var scv = setInterval(singleCaseView, 1000);
+	reminder();
+}
+
+function singleCaseView() {
+	if(document.getElementById("tsidLabel") == null || typeof(document.getElementById("tsidLabel"))=="undefined" || document.getElementById("tsidLabel").textContent != "Support") {
+		return;
 	}
-	setInterval( function() {
-		initSLA_NOW(caseSla);
-		if(caseStatus!="Solution Proposed"){
-		if(getSLA_NOW()>0)
-			timeRemainingHolder.textContent = "Time Remaining Left: " + getSLA_NOW() + " minutes.";
-		else
-			timeRemainingHolder.textContent = "Time Remaining Left: Exceeded.";
-			timeRemainingHolder.style.color = "CC0000";
-			initSLA_NOW(caseSla);
-			if(getSLA_NOW()< 60)
-				blinkDiv(timeRemainingHolder, "1797c0");
-		}
-	}, 1000);
+	
+	if(document.getElementById("j_id0:onlinecase:j_id41:sla_tracking:j_id127").textContent == "" || document.getElementById("j_id0:onlinecase:j_id41:sla_tracking:j_id127").textContent == " " || document.getElementById("j_id0:onlinecase:j_id41:sla_tracking:j_id127").textContent == null) {
+		return;
+	}
+	
+	var container = document.getElementById("container");
+	if(document.getElementById("timeLeftContainer")!= null) {
+		document.getElementById("timeLeftContainer").remove();
+	}
+	
+	var timeLeftContainer = document.createElement("div");
+	timeLeftContainer.style.float = "left";
+	timeLeftContainer.style.paddingLeft = "20px";
+	timeLeftContainer.id = "timeLeftContainer";
+	var timeLeftCaption = document.createElement("h1");
+	timeLeftCaption.class = "pageType";
+	timeLeftCaption.textContent = "Time Remaining Left";
+	var timeBreakElem = document.createElement("br");
+	var timeLeftValue = document.createElement("h2");
+	timeLeftValue.style.fontSize = "1.8em";
+	timeLeftValue.style.fontWeight = "normal";
+	timeLeftValue.style.lineHeight = "1.1em";
+	
+	var caseSla = getSLA_NOW(document.getElementById("j_id0:onlinecase:j_id41:sla_tracking:j_id127").textContent);
+	timeLeftValue.textContent = caseSla + " minutes.";
+	if(caseSla<60 && caseSla > 0) {
+		blinkDiv(timeLeftContainer, "#2c86ff");
+	} else if(caseSla<0) {
+		timeLeftValue.textContent = "Exceeded.";
+	}
+	
+	timeLeftContainer.appendChild(timeLeftCaption);
+	timeLeftContainer.appendChild(timeBreakElem);
+	timeLeftContainer.appendChild(timeLeftValue);
+	container.appendChild(timeLeftContainer);
+	
 }
 
 function refreshSF() {
@@ -211,7 +224,8 @@ function showStatFunc() {
 	for (var r=0;r<ownerName.length; r++) {
 		ownerArray.push(ownerName[r].textContent);
 	}
-	owner = ownerArray.unique();	
+	var owner = ownerArray.unique();	
+	
 	alert('Total number of case: '+nCase.length+'\n\nCase breakdown per status:\nHandling: '+hStat+'\nAssigned: '+aStat+'\nNew: '+nStat+'\nReturned to support: '+rStat+'\nDe-escalated T1: '+ dStat+'\n\nHandled and assigned cases per engineer: '+getOwner(owner));
 }
 
@@ -344,22 +358,23 @@ function sf_write(val, willreplace, filename) {
 }
 
 function sf_append(val, filename) {	
-	var itr = initSettings.settings.reserveRules;
-	var temp = [];
-	for(var x=0 ; x<itr ;x++) {
-		temp[x] = initSettings.rules[initSettings.rules.length- (x+1) ];
-		console.log(">> " + temp[x]);
+	if(typeof(val)!="undefined" && val) {
+		var itr = initSettings.settings.reserveRules;
+		var temp = [];
+		for(var x=0 ; x<itr ;x++) {
+			temp[x] = initSettings.rules[initSettings.rules.length-(x+1)];
+		}
+		for(var x=0 ; x<itr ; x++)  {
+			initSettings.rules.splice(initSettings.rules.length-1, 1);
+		}
+		console.log(val);
+		initSettings.rules.push(val);
+		for(var x=itr-1 ; x>-1 ; x--) {
+			initSettings.rules.push(temp[x]);
+		}
+		sf_delete(labels);
+		sf_write(JSON.stringify(initSettings), false, labels)
 	}
-	for(var x=0 ; x<itr ; x++)  {
-		initSettings.rules.splice(initSettings.rules.length-1, 1);
-	}
-	initSettings.rules.push(val);
-	for(var x=itr-1 ; x>-1 ; x--) {
-		console.log(temp[x]);
-		initSettings.rules.push(temp[x]);
-	}
-	sf_delete(labels);
-	sf_write(JSON.stringify(initSettings), false, labels)
 }
 
 function sf_read(filename) {
@@ -738,8 +753,8 @@ function buildAddLabels(settingsContainer, dimmer) {
 	buttonContainer.style.marginTop = "20px";
 	var saveBtn = createButton("save");
 	saveBtn.onclick = function() { 
-		if((typeof(captionText.value) == "undefined" || captionText.value == "") && (typeof(colorText.value) == "undefined" || colorText.value == "") && (typeof(rulesText.value) == "undefined")) {
-			alert("Caption and Color is required.");
+		if((typeof(captionText.value) == "undefined" || captionText.value == "")) {
+			alert("Account is required.");
 		} else {
 			var val = {};
 			val.caption = captionText.value;
@@ -881,6 +896,11 @@ function getAllCaseStats() {
 							rule = rule.replace(rules[itr].variable, rules[itr].value);
 						}
 					}
+					
+					if(rules[itr].caption == "Assigned Cases") {
+						assignedColor = rules[itr].color;
+					}
+					
 					for(var vars=0 ; vars<definedVariables.length ; vars++) {
 						rule = rule.replace(definedVariables[vars].variable, definedVariables[vars].value);
 					}
@@ -889,17 +909,12 @@ function getAllCaseStats() {
 						datePerCase[i].parentElement.parentElement.style.background=rules[itr].color
 						var diffColor = parseInt('0x' + rules[itr].color.substring(1, rules[itr].color.length));
 						var spanElem = datePerCase[i].getElementsByTagName('span')[0];
-						//if(diffColor<=10066329)
-						//		console.log(spanElem);
 					}
 					}catch(e){}
 				}
-				initSLA_NOW(slas[i].innerText);
 				if(window.top.document.getElementById('userNavLabel').textContent.match( alterName(caseOwner[i].innerText) )){
-					initSLA_NOW(slas[i].innerText);
-					if(getSLA_NOW()< 60) {
-						caseColor = rules[rules.length-2].color;//GET THE ASSIGNED CASE COLOR -> maybe add it on the data.settings.assignedColor
-						blinkDiv(datePerCase[i].parentElement.parentElement, caseColor);
+					if(getSLA_NOW(slas[i].innerText)< 60) {
+						blinkDiv(datePerCase[i].parentElement.parentElement, assignedColor);
 					}
 				}
 			}	
@@ -908,13 +923,13 @@ function getAllCaseStats() {
 	//get all case tabs
 	if(caseTabs.length>0) {
 		for(var j=0 ; j<caseTabs.length ; j++) {
+			caseTabs[j].parentElement.parentElement.parentElement.parentElement.style.background="white";
 			for(var i=0 ; i<caseNos.length ; i++) {
 				if(caseTabs[j].innerText.split(" ")[1]==caseNos[i].innerText){
-					initSLA_NOW(slas[i].innerText);
-					if(getSLA_NOW()<0)
+					if(getSLA_NOW(slas[i].innerText)<0)
 						caseTabs[j].innerText="Case: " + caseNos[i].innerText + " : Exceeded.";
 					else
-						caseTabs[j].innerText="Case: " + caseNos[i].innerText + " : " + getSLA_NOW() + " minutes left.";
+						caseTabs[j].innerText="Case: " + caseNos[i].innerText + " : " + getSLA_NOW(slas[i].innerText) + " minutes left.";
 					for(var itr=0 ; itr<rules.length ; itr++) {
 						var rule = rules[itr].rule;
 						for(var vars=0 ; vars<definedVariables.length ; vars++) {
@@ -931,19 +946,17 @@ function getAllCaseStats() {
 	}
 }
 
-function initSLA_NOW(CASE_SLA) {
-	SLA = new Date(CASE_SLA)
-	NOW = new Date();
-	RES=new Date(SLA-NOW);
-}
-
-function getSLA_NOW(){
-	NOW = new Date();
-	days_remaining=SLA.getDate()-NOW.getDate();
-	hours_remaining=(SLA.getHours() - NOW.getHours());
-	minutes_remaining=(SLA.getMinutes() - NOW.getMinutes());
-	hours_remaining=hours_remaining+(days_remaining*24);
-	total_result=(hours_remaining*60)+minutes_remaining;
+function getSLA_NOW(CASE_SLA){
+	var NOW = new Date();
+	var SLA = new Date(CASE_SLA);
+	if(NOW.getMonth()%4==0)
+		daysInAMonth[1]=29;
+	var monthDiff = SLA.getMonth()==NOW.getMonth() ? 0 : daysInAMonth[NOW.getMonth()];
+	var days_remaining=SLA.getMonth()==NOW.getMonth() ? SLA.getDate()-NOW.getDate() : (SLA.getDate()+(monthDiff-NOW.getDate()));
+	var hours_remaining=(SLA.getHours() - NOW.getHours());
+	var minutes_remaining=(SLA.getMinutes() - NOW.getMinutes());
+	var hours_remaining=hours_remaining+(days_remaining*24);
+	var total_result=(hours_remaining*60)+minutes_remaining;
 	return total_result;
 }
 

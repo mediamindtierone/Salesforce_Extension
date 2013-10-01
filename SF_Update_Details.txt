@@ -15,4 +15,7 @@
 [ ]If case will be escalated to upper tier, set the status to the designated tier
 	- create cookies to all handling cases / per browser session maybe
 	- if current reply has Tier2 or Tier3 word in it, flag it. 
-[ ]new comment - public box is not checked automatically.
+[X]new comment - public box is not checked automatically.
+[X] fixed the Time Remaining Left inconsistency
+	- made it available only on single case view
+[ ]hide the interaction monitor
