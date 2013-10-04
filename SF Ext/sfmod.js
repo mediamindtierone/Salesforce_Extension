@@ -81,6 +81,20 @@ if(params.fcf){
 } else {//for individual case view
 	var scv = setInterval(singleCaseView, 1000);
 	reminder();
+	
+	//popup reminder for Lead for Website
+	lfw_popup();
+}
+
+function lfw_popup() {
+	if(document.getElementById("j_id0:onlinecase:j_id41:j_id52:j_id53")==null || typeof(document.getElementById("j_id0:onlinecase:j_id41:j_id52:j_id53"))=="undefined") return;
+	
+	if(window.location.href.match("CaseDetail") == false) return;
+	
+	var lfw_subject = document.getElementById("j_id0:onlinecase:j_id41:j_id52:j_id53").textContent.toLowerCase();
+	if(lfw_subject.match("lead from website"))
+	sf_popup("Please be reminded that we have to follow the process indicated on this wiki article: <br><b>http://peg/wiki/index.php/lead-from-website-emails/</b><br> before handling this case.");
+	
 }
 
 function singleCaseView() {
@@ -358,20 +372,28 @@ function sf_write(val, willreplace, filename) {
 }
 
 function sf_append(val, filename) {	
-	if(typeof(val)!="undefined" && val) {
-		var itr = initSettings.settings.reserveRules;
-		var temp = [];
-		for(var x=0 ; x<itr ;x++) {
-			temp[x] = initSettings.rules[initSettings.rules.length-(x+1)];
-		}
-		for(var x=0 ; x<itr ; x++)  {
-			initSettings.rules.splice(initSettings.rules.length-1, 1);
-		}
-		console.log(val);
-		initSettings.rules.push(val);
-		for(var x=itr-1 ; x>-1 ; x--) {
-			initSettings.rules.push(temp[x]);
-		}
+	try {
+	if(typeof(val)=="undefined" && val == null) {
+		console.log("Error: sf_append : trying to save with val null or undefined."); 
+		return;
+	}
+	if(typeof(initSettings)=="string" || typeof(initSettings)!="object") return;
+	
+	var itr = initSettings.settings.reserveRules;
+	var temp = [];
+	for(var x1=0 ; x1<itr ;x1++) {
+		temp[x1] = initSettings.rules[initSettings.rules.length-(x1+1)];
+	}
+	for(var x2=0 ; x2<itr ; x2++)  {
+		initSettings.rules.splice(initSettings.rules.length-1, 1);
+	}
+	initSettings.rules.push(val);
+	for(var x3=itr-1 ; x3>-1 ; x3--) {
+		initSettings.rules.push(temp[x3]);
+	}
+	}catch(e){
+		console.log("Error: sf_append : contact windhel");
+	}finally{
 		sf_delete(labels);
 		sf_write(JSON.stringify(initSettings), false, labels)
 	}
@@ -562,6 +584,9 @@ function settingWindow(e) {
 	var textColor = [];
 	var rule = [];
 	var deleteRule = [];
+	var rulesCOntainer = document.createElement("div");
+	rulesCOntainer.style.overflowX = "scroll";
+	rulesCOntainer.style.height = "350px";
 	settingsContainer.appendChild(headerContainer);
 	settingsContainer.appendChild(topButtonContainer);
 	if(typeof(initSettings)=="undefined" || initSettings.length < 0) return;
@@ -620,7 +645,7 @@ function settingWindow(e) {
 		if(initSettings.rules[i].editMode==1 || initSettings.rules[i].editMode==4) {
 			valueHolder[i].value = initSettings.rules[i].value;
 			valueHolder[i].id = "valueHolder";
-			valueHolder[i].maxLength = 5;
+			valueHolder[i].maxLength = 15;
 			valueHolder[i].style.display = "inline";
 			valueHolder[i].size = 1;
 			valueHolder[i].setAttribute('valId', i)
@@ -636,8 +661,9 @@ function settingWindow(e) {
 			topSetCont.appendChild(deleteRule[i]);
 		}
 		settings.appendChild(topSetCont);
-		settingsContainer.appendChild(settings);
+		rulesCOntainer.appendChild(settings);
 	}
+	settingsContainer.appendChild(rulesCOntainer);
 	settingsContainer.appendChild(bottomButtonContainer);
 }
 
@@ -910,7 +936,9 @@ function getAllCaseStats() {
 						var diffColor = parseInt('0x' + rules[itr].color.substring(1, rules[itr].color.length));
 						var spanElem = datePerCase[i].getElementsByTagName('span')[0];
 					}
-					}catch(e){}
+					}catch(e){
+						console.log(rule)
+					}
 				}
 				if(window.top.document.getElementById('userNavLabel').textContent.match( alterName(caseOwner[i].innerText) )){
 					if(getSLA_NOW(slas[i].innerText)< 60) {
@@ -947,16 +975,18 @@ function getAllCaseStats() {
 }
 
 function getSLA_NOW(CASE_SLA){
+	if(typeof(CASE_SLA)=="undefined" || CASE_SLA == null) return "";
 	var NOW = new Date();
 	var SLA = new Date(CASE_SLA);
 	if(NOW.getMonth()%4==0)
 		daysInAMonth[1]=29;
 	var monthDiff = SLA.getMonth()==NOW.getMonth() ? 0 : daysInAMonth[NOW.getMonth()];
-	var days_remaining=SLA.getMonth()==NOW.getMonth() ? SLA.getDate()-NOW.getDate() : (SLA.getDate()+(monthDiff-NOW.getDate()));
+	var days_remaining=SLA.getMonth()==NOW.getMonth() ? SLA.getDate()-NOW.getDate() : NOW > SLA ? SLA.getDate()-(monthDiff+NOW.getDate()) : Math.abs((SLA.getDate()+monthDiff)-NOW.getDate());
 	var hours_remaining=(SLA.getHours() - NOW.getHours());
 	var minutes_remaining=(SLA.getMinutes() - NOW.getMinutes());
 	var hours_remaining=hours_remaining+(days_remaining*24);
 	var total_result=(hours_remaining*60)+minutes_remaining;
+
 	return total_result;
 }
 
@@ -997,4 +1027,70 @@ function addReminder() {
 	} else {
 		return true;
 	}
+}
+
+function sf_popup(contents) {
+	if(document.getElementById("popupDimmer"))document.getElementById("popupDimmer").remove();
+	if(document.getElementById("popupContainer"))document.getElementById("popupContainer").remove();
+	var dimmer = document.createElement("div");
+	dimmer.id = "popupDimmer";
+	dimmer.style.position = "fixed";
+	dimmer.style.zIndex = "9999";
+	dimmer.style.display = "block";
+	dimmer.style.height = "1500px";
+	dimmer.style.width = "1500px";
+	dimmer.style.opacity = "0.5";
+	dimmer.style.background = "black";
+	dimmer.style.top = "0px";
+	document.body.appendChild(dimmer);
+	var popupContainer = document.createElement("div");
+	popupContainer.setAttribute("style", "Position:absolute");
+	popupContainer.id = "popupContainer";
+	popupContainer.style.display = "block";
+	popupContainer.style.zIndex = "10000";
+	popupContainer.style.height = "auto";
+	popupContainer.style.width = "400px";
+	popupContainer.style.zIndex="99999";
+	popupContainer.style.textAlign = "center";
+	popupContainer.style.background = "white";
+	popupContainer.style.margin = "20px 10px 20px 10px";
+	popupContainer.style.padding = "30px 10px 30px 10px";
+	popupContainer.style.outline = "3px solid #4d90fe";
+	popupContainer.style.top = "0px";
+	popupContainer.style.left = String((window.innerWidth/2)-200)+"px";
+	document.body.appendChild(popupContainer);
+	
+	var closeButton = createButton("close");
+	closeButton.onclick = function() { 
+		popupContainer.style.display = "none";
+		dimmer.style.display = "none";
+		popupContainer.remove();
+		dimmer.remove();
+	}
+	
+	var bottomContainer = document.createElement("div");
+	bottomContainer.style.position = "absolute";
+	bottomContainer.style.right = "0";
+	bottomContainer.style.bottom = "0";
+	bottomContainer.style.marginBottom = "7px";	
+	
+	var topContainer = document.createElement("div");
+	topContainer.style.position = "absolute";
+	topContainer.style.top = "0";
+	topContainer.style.left = "0";
+	topContainer.style.marginBottom = "7px";
+	topContainer.style.background = "rgb(77, 144, 254)";
+	topContainer.style.color = "#194FA5";
+	topContainer.style.fontWeight = "bold";
+	topContainer.innerHTML = "<h1>Reminder</h1>";
+	topContainer.style.width = "100%"
+	topContainer.style.fontSize = "1.7em"
+	
+	var contentsContainer = document.createElement("div");
+	contentsContainer.innerHTML = contents;
+
+	bottomContainer.appendChild(closeButton);
+	popupContainer.appendChild(topContainer);
+	popupContainer.appendChild(contentsContainer);
+	popupContainer.appendChild(bottomContainer);
 }
