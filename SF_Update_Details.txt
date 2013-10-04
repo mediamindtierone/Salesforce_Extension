@@ -4,6 +4,7 @@
 [X]make it work across all tiers - tabbing and time display on tab
 [X]remove advanced option and dynamic option
 [ ]improve UI look
+	- added a scrollbar
 [X]upload to GIThub
 [ ]enable or disable blink
 [X]update the Engineers/Agent's Total Case Handled 
@@ -19,3 +20,4 @@
 [X] fixed the Time Remaining Left inconsistency
 	- made it available only on single case view
 [ ]hide the interaction monitor
+[ ]if case title is from "Lead from Website" popup a message
