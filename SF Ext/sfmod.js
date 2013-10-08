@@ -1,7 +1,5 @@
 /*
-
 	This plugin is using file handling for HTML5, please see URL: http://www.html5rocks.com/en/tutorials/file/filesystem/#toc-introduction
-	
 */
 
 var sfRefresh;
@@ -33,6 +31,7 @@ var persistenceType = window.TEMPORARY;
 var fileSize = 1024*1024;
 var _RESULT;
 var initSettings;
+var tmpColor;
 var regex = /[?&]([^=#]+)=([^&#]*)/g, 
 	url = window.location.href, 
 	params = {}, 
@@ -95,7 +94,7 @@ function lfw_popup() {
 	
 	var lfw_subject = document.getElementById("j_id0:onlinecase:j_id41:j_id52:j_id53").textContent.toLowerCase();
 	if(lfw_subject.match("lead from website"))
-	sf_popup("Please be reminded that we have to follow the process indicated on this wiki article: <br><b>http://peg/wiki/index.php/lead-from-website-emails/</b><br> before handling this case.");
+	sf_popup("<h1>Reminder</h1>","Please be reminded that we have to follow the process indicated on this wiki article: <br><b>http://peg/wiki/index.php/lead-from-website-emails/</b><br> before handling this case.");
 	
 }
 
@@ -138,7 +137,6 @@ function singleCaseView() {
 	timeLeftContainer.appendChild(timeBreakElem);
 	timeLeftContainer.appendChild(timeLeftValue);
 	container.appendChild(timeLeftContainer);
-	
 }
 
 function refreshSF() {
@@ -146,10 +144,19 @@ function refreshSF() {
 	document.getElementById(params.fcf+"_wrapper").onmouseover = detectExceedInst;
 }
 
+function refreshRate(rate){
+	console.log("setting refresh rate to " + rate);
+	clearInterval(sfRefresh);
+	sfRefresh = setInterval(function() {	
+		document.getElementById(params.fcf+"_refresh").click();
+		detectExceedDelay();
+	} , rate);
+}
+
 function detectExceedDelay() {
 	var detectTimer = setInterval(function() {
 		clearInterval(detectTimer);
-		detectExceedInst();	
+		detectExceedInst();
 	}, 3000);
 }
 
@@ -187,7 +194,7 @@ function statPortion() {
 		imgnode.id ="statButton";
 		imgnode.setAttribute('style','Position:absolute');
 		imgnode.onclick = function() {
-			showStatFunc();
+			sf_popup("Case Status", "<div style='text-align:left;'>" + showStatFunc() + "</div>");
 		}
 		imgnode.style.left = String((window.innerWidth/2)-40) + "px";
 		imgnode.style.cursor="pointer";
@@ -242,12 +249,13 @@ function showStatFunc() {
 	}
 	var owner = ownerArray.unique();	
 	
-	alert('Total number of case: '+nCase.length+'\n\nCase breakdown per status:\nHandling: '+hStat+'\nAssigned: '+aStat+'\nNew: '+nStat+'\nReturned to support: '+rStat+'\nDe-escalated T1: '+ dStat+'\n\nHandled and assigned cases per engineer: '+getOwner(owner));
+	return 'Total number of case: '+nCase.length+'<br><br>Case breakdown per status:<br>Handling: '+hStat+'<br>Assigned: '+aStat+'<br>New: '+nStat+'<br>Returned to support: '+rStat+'<br>De-escalated T1: '+ dStat+'<br><br>Handled and assigned cases per engineer: <br>'+getOwner(owner);
 }
 
 function getOwner(vals) {
 	var tempStr="";
 	var tempNum=0;
+	var cnt=0;
 	nArray = []
 	for (var w = 0; w < vals.length; w++) {
 		if (vals[w] != undefined && vals[w] != "Online Support Tier 1" && vals[w].length > 1) {
@@ -257,7 +265,8 @@ function getOwner(vals) {
 					cnt++;					
 				}
 			}
-			tempStr += String("\n"+vals[w]+": "+cnt)
+			tempStr += String("\n"+vals[w]+": "+cnt + "<br>")
+			cnt=0;
 		}
 	}	
 	return tempStr
@@ -450,20 +459,27 @@ function buildInitSettings() {
 
 function createButton(text) {
 	var btn = document.createElement("a");
-	btn.style.background = "#4d90fe";
-	btn.style.padding = "2px";
+	btn.style.padding = "3px";
 	btn.style.margin = "5px";
-	btn.style.border = "1px solid white";
-	btn.style.outline = "1px solid #4d90fe"
-	btn.style.fontWeight = "bold";
-	btn.style.color = "white";
+	
+	btn.style.webkitAppearance = "none";
+	btn.style.webkitUserSelect = "none";
+	btn.style.backgroundImage = "-webkit-linear-gradient(#ededed, #ededed 38%, #dedede)";
+	btn.style.border = "1px solid rgba(0, 0, 0, 0.25)";
+	btn.style.borderRadius = "2px";
+	btn.style.boxShadow = "0 1px 0 rgba(0, 0, 0, 0.08), inset 0 1px 2px rgba(255, 255, 255, 0.75)";
+	btn.style.color = "#444";
+	btn.style.textShadow = "0 1px 0 rgb(240, 240, 240)";
+	
 	btn.style.cursor = "pointer";
 	btn.style.textDecoration = "none";
 	btn.innerText = text;
+	/*
 	btn.onmouseover = function() { this.style.background = "orange"; }
 	btn.onmouseout = function() { this.style.background = "#4d90fe"; }
 	btn.onmousedown = function() { this.style.background = "red"; }
 	btn.onmouseup = function() { this.style.background = "orange"; }
+	*/
 	return btn;
 }
 
@@ -490,10 +506,10 @@ function settingWindow(e) {
 	settingsContainer.style.width = "400px";
 	settingsContainer.style.zIndex="99999";
 	settingsContainer.style.textAlign = "center";
-	settingsContainer.style.background = "white";
-	settingsContainer.style.margin = "20px 10px 20px 10px";
 	settingsContainer.style.padding = "30px 10px 30px 10px";
-	settingsContainer.style.outline = "3px solid #4d90fe";
+	settingsContainer.style.background = "rgb(248,248,248)";
+	settingsContainer.style.margin = "20px 10px 20px 10px";
+	settingsContainer.style.outline = "2px solid rgb(183,199,207)";
 	settingsContainer.style.top = "0px";
 	settingsContainer.style.left = String((window.innerWidth/2)-200)+"px";
 	top.document.body.appendChild(settingsContainer);
@@ -589,6 +605,7 @@ function settingWindow(e) {
 	var rulesCOntainer = document.createElement("div");
 	rulesCOntainer.style.overflowX = "scroll";
 	rulesCOntainer.style.height = "350px";
+	rulesCOntainer.style.outline = "2px solid rgb(183,199,207)";
 	settingsContainer.appendChild(headerContainer);
 	settingsContainer.appendChild(topButtonContainer);
 	if(typeof(initSettings)=="undefined" || initSettings.length < 0) return;
@@ -858,18 +875,10 @@ function createLegends(){
 }
 
 //timer
-function refreshRate(rate){
-	console.log("setting refresh rate to " + rate);
-	clearInterval(sfRefresh);
-	sfRefresh = setInterval(function() {	
-		document.getElementById(params.fcf+"_refresh").click();		
-		detectExceedDelay();		
-	} , rate);
-}
-
 function startSLATimerProcess() {
 	initSettings = buildInitSettings();
 	var sla=setInterval(getAllCaseStats,1000);
+	//getAllCaseStats();
 	refreshRate(JSON.parse(_RESULT).settings.refreshRate);
 }
 
@@ -910,12 +919,14 @@ function getAllCaseStats() {
 	}else if(tier=="Online Support Tier 3") {
 		caseOwner = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-OWNER_NAME");
 	}
-	//get list of cases on the queue
+	//get list of cases on the queue and assign colors
 	if(firstCase.length>0){
 		if(document.getElementsByClassName("dgmm").length>0){ console.log("do nothing");}
 		else{		
 			for(var i=0 ; i<datePerCase.length ; i++) {
 				datePerCase[i].parentElement.parentElement.style.background="white";
+				datePerCase[i].parentElement.parentElement.removeAttribute("colors");
+				tmpColor="";
 				for(var itr=0 ; itr<rules.length ; itr++) {
 					var rule = rules[itr].rule;
 					if(rules[itr].editMode) {
@@ -933,19 +944,31 @@ function getAllCaseStats() {
 						rule = rule.replace(definedVariables[vars].variable, definedVariables[vars].value);
 					}
 					try{
-					if(eval(rule) && datePerCase[i]) {
-						datePerCase[i].parentElement.parentElement.style.background=rules[itr].color
-						var diffColor = parseInt('0x' + rules[itr].color.substring(1, rules[itr].color.length));
-						var spanElem = datePerCase[i].getElementsByTagName('span')[0];
-					}
+						if(eval(rule) && datePerCase[i]) {
+							if(itr>=0 && itr<5) {
+								tmpColor = rules[itr].color;
+							} else {
+								getClrPrElem(datePerCase[i].parentElement.parentElement, rules[itr].color);
+							}
+						}
+						if(itr==rules.length-1 && tmpColor!="") {
+							getClrPrElem(datePerCase[i].parentElement.parentElement, tmpColor);
+						}
 					}catch(e){
-						console.log(rule)
+						//console.log(rule)
 					}
 				}
 				if(window.top.document.getElementById('userNavLabel').textContent.match( alterName(caseOwner[i].innerText) )){
 					if(getSLA_NOW(slas[i].innerText)< 60) {
-						blinkDiv(datePerCase[i].parentElement.parentElement, assignedColor);
+						getClrPrElem(datePerCase[i].parentElement.parentElement, assignedColor);
 					}
+				}
+				
+				//let it blink
+				if(datePerCase[i].parentElement.parentElement.getAttribute("colors")) {
+					var elemx = datePerCase[i].parentElement.parentElement;
+					var colorsx = datePerCase[i].parentElement.parentElement.getAttribute("colors").split(",");
+					blinkDiv(elemx, colorsx);
 				}
 			}	
 		}
@@ -954,6 +977,7 @@ function getAllCaseStats() {
 	if(caseTabs.length>0) {
 		for(var j=0 ; j<caseTabs.length ; j++) {
 			caseTabs[j].parentElement.parentElement.parentElement.parentElement.style.background="white";
+			caseTabs[j].parentElement.parentElement.parentElement.parentElement.removeAttribute("colors");
 			for(var i=0 ; i<caseNos.length ; i++) {
 				if(caseTabs[j].innerText.split(" ")[1]==caseNos[i].innerText){
 					if(getSLA_NOW(slas[i].innerText)<0)
@@ -965,10 +989,38 @@ function getAllCaseStats() {
 						for(var vars=0 ; vars<definedVariables.length ; vars++) {
 							rule = rule.replace(definedVariables[vars].variable, definedVariables[vars].value);
 							rule = rule.replace(rules[itr].variable, rules[itr].value);
-						}
-						if(eval(rule) && datePerCase[i]) {
+						}/*
+						if(eval(rule) && caseTabs[j]) {
 							caseTabs[j].parentElement.parentElement.parentElement.parentElement.style.background=rules[itr].color;
+						}*/
+						
+						//blink the case tabs
+						try{
+							if(eval(rule) && caseTabs[j]) {
+								if(itr>=0 && itr<5) {
+									tmpColor = rules[itr].color;
+								} else {
+									getClrPrElem(caseTabs[j].parentElement.parentElement.parentElement.parentElement, rules[itr].color);
+								}
+							}
+							if(itr==rules.length-1 && tmpColor!="") {
+								getClrPrElem(caseTabs[j].parentElement.parentElement.parentElement.parentElement, tmpColor);
+							}
+						}catch(e){
+							//console.log(rule)
 						}
+					}
+					if(window.top.document.getElementById('userNavLabel').textContent.match( alterName(caseOwner[i].innerText) )){
+						if(getSLA_NOW(slas[i].innerText)< 60) {
+							getClrPrElem(caseTabs[j].parentElement.parentElement.parentElement.parentElement, assignedColor);
+						}
+					}
+					
+					//let it blink
+					if(caseTabs[j].parentElement.parentElement.parentElement.parentElement.getAttribute("colors")) {
+						var elemx = caseTabs[j].parentElement.parentElement.parentElement.parentElement;
+						var colorsx = caseTabs[j].parentElement.parentElement.parentElement.parentElement.getAttribute("colors").split(",");
+						blinkDiv(elemx, colorsx);
 					}
 				}
 			}
@@ -988,21 +1040,43 @@ function getSLA_NOW(CASE_SLA){
 	var minutes_remaining=(SLA.getMinutes() - NOW.getMinutes());
 	var hours_remaining=hours_remaining+(days_remaining*24);
 	var total_result=(hours_remaining*60)+minutes_remaining;
-
 	return total_result;
 }
 
-//blinks your case that is going to exceed within a specified time
-function blinkDiv(element, color) {
-	if(getCurrentSeconds()%2){
-		element.style.background=color;
-	}else{
-		element.style.background="white";
-	}
+function blinkDiv(elem, colors) {
+	var colorSize = colors.length;
+	var itr = getCurrentSeconds()%colorSize;
+	elem.style.background=colors[itr];
 }
 
 function getCurrentSeconds() {
 	return  new Date().getSeconds();
+}
+
+function getClrPrElem(elem, color) {
+	try {
+		var attr;
+		var clrs = [];
+		var result = "";
+		//check if color already existed
+		if(elem.getAttribute("colors")!=null) {
+			attr = elem.getAttribute("colors");
+			clrs = attr.split(",");
+		}
+		if(color!="" || typeof(color)!="undefined" || color!=null) {
+			if(clrs.indexOf(color)==-1)
+				clrs.push(color);
+			for(var itr=0 ; itr<clrs.length ; itr++) {
+				if(clrs[itr]!="") {
+					result += clrs[itr];
+					if(typeof(clrs[itr+1])!="undefined") {
+						result += ",";
+					}
+				}
+			}
+			elem.setAttribute("colors", result);
+		}
+	}catch(e) {}
 }
 
 //reminder
@@ -1031,7 +1105,8 @@ function addReminder() {
 	}
 }
 
-function sf_popup(contents) {
+//popup
+function sf_popup(title, contents) {
 	if(document.getElementById("popupDimmer"))document.getElementById("popupDimmer").remove();
 	if(document.getElementById("popupContainer"))document.getElementById("popupContainer").remove();
 	var dimmer = document.createElement("div");
@@ -1054,10 +1129,9 @@ function sf_popup(contents) {
 	popupContainer.style.width = "400px";
 	popupContainer.style.zIndex="99999";
 	popupContainer.style.textAlign = "center";
-	popupContainer.style.background = "white";
+	popupContainer.style.background = "rgb(248,248,248)";
 	popupContainer.style.margin = "20px 10px 20px 10px";
-	popupContainer.style.padding = "30px 10px 30px 10px";
-	popupContainer.style.outline = "3px solid #4d90fe";
+	popupContainer.style.outline = "2px solid rgb(183,199,207)";
 	popupContainer.style.top = "0px";
 	popupContainer.style.left = String((window.innerWidth/2)-200)+"px";
 	document.body.appendChild(popupContainer);
@@ -1080,15 +1154,18 @@ function sf_popup(contents) {
 	topContainer.style.position = "absolute";
 	topContainer.style.top = "0";
 	topContainer.style.left = "0";
+	topContainer.style.padding = "5px 0px";
 	topContainer.style.marginBottom = "7px";
-	topContainer.style.background = "rgb(77, 144, 254)";
-	topContainer.style.color = "#194FA5";
+	topContainer.style.background = "rgb(230,241,246)";
+	topContainer.style.borderBottom = "1px solid rgb(183,199,207)";
+	topContainer.style.color = "rgb(68,68,68)";
 	topContainer.style.fontWeight = "bold";
-	topContainer.innerHTML = "<h1>Reminder</h1>";
+	topContainer.innerHTML = title;//"<h1>Reminder</h1>";
 	topContainer.style.width = "100%"
-	topContainer.style.fontSize = "1.7em"
 	
 	var contentsContainer = document.createElement("div");
+	contentsContainer.style.padding = "30px 10px 30px 10px";
+	contentsContainer.style.background = "rgb(243,243,247)";
 	contentsContainer.innerHTML = contents;
 
 	bottomContainer.appendChild(closeButton);
