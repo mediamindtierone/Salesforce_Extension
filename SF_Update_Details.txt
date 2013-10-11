@@ -21,3 +21,4 @@
 	- made it available only on single case view
 [ ]hide the interaction monitor
 [ ]if case title is from "Lead from Website" popup a message
+[ ] make it like a custom script use our custom server

@@ -2,140 +2,134 @@
 	This plugin is using file handling for HTML5, please see URL: http://www.html5rocks.com/en/tutorials/file/filesystem/#toc-introduction
 */
 
-var sfRefresh;
-var datePerCase = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-00NC0000005BOuj");
-var accountNamePerCase = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-ACCOUNT_NAME");
-var pubNamePerCase = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-00NC0000005C8T4");
-var caseOwner = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-00NC0000005C8Sw");
-var iterationCount = document.getElementsByClassName("x-grid3-col x-grid3-cell x-grid3-td-00NC0000005C8Tc");
-var productCategory = document.getElementsByClassName("x-grid3-col x-grid3-cell x-grid3-td-00NC0000005C8T2");
-var tier;
-var ownerName;
-var definedVariables = [
-	{variable:"#NOW", value:"new Date()"},
-	{variable:"#CASESLA", value:"new Date(datePerCase[i].textContent)"},
-	{variable:"#ACCOUNT", value:"accountNamePerCase[i].textContent"},
-	{variable:"#PUBNAME", value:"pubNamePerCase[i].textContent"},
-	{variable:"#PRODCAT", value:"productCategory[i].textContent"},
-	{variable:"#ME", value:"window.top.document.getElementById('userNavLabel').textContent"},
-	{variable:"#CASEOWNER", value:'alterName(caseOwner[i].innerText)'},
-	{variable:"#ITERCNT", value:'alterName(iterationCount[i].innerText)'}
-];
-var daysInAMonth = [31,28,31,30,31,30,31,31,30,31,30,31];
-window.requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
-var fs = null;
-var labels = "sfExtension_labels.txt";
-var state = "";
-var msg = '';
-var persistenceType = window.TEMPORARY;
-var fileSize = 1024*1024;
+var fs 					= null,
+	msg 				= "",
+	state 				= "",
+	tier,
+	tmpColor,
+	sfRefresh,
+	initSettings,
+	ownerName,
+	caseOwner 			= document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-00NC0000005C8Sw"),
+	datePerCase 		= document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-00NC0000005BOuj"),
+	pubNamePerCase 		= document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-00NC0000005C8T4"),
+	iterationCount 		= document.getElementsByClassName("x-grid3-col x-grid3-cell x-grid3-td-00NC0000005C8Tc"),
+	productCategory 	= document.getElementsByClassName("x-grid3-col x-grid3-cell x-grid3-td-00NC0000005C8T2"),
+	accountNamePerCase 	= document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-ACCOUNT_NAME"),
+	definedVariables 	= [
+							{variable:"#NOW", value:"new Date()"},
+							{variable:"#CASESLA", value:"new Date(datePerCase[i].textContent)"},
+							{variable:"#ACCOUNT", value:"accountNamePerCase[i].textContent"},
+							{variable:"#PUBNAME", value:"pubNamePerCase[i].textContent"},
+							{variable:"#PRODCAT", value:"productCategory[i].textContent"},
+							{variable:"#ME", value:"window.top.document.getElementById('userNavLabel').textContent"},
+							{variable:"#CASEOWNER", value:'alterName(caseOwner[i].innerText)'},
+							{variable:"#ITERCNT", value:'alterName(iterationCount[i].innerText)'}
+						],
+	labels 				= "sfExtension_labels.txt",
+	fileSize 			= 1024*1024,
+	daysInAMonth 		= [31,28,31,30,31,30,31,31,30,31,30,31],
+	persistenceType 	= window.TEMPORARY,
+	regex 				= /[?&]([^=#]+)=([^&#]*)/g, 
+	url 				= window.location.href, 
+	params 				= {}, 
+	match,
+	resetStat 			= 0,
+	assignedColor;
+	
 var _RESULT;
-var initSettings;
-var tmpColor;
-var regex = /[?&]([^=#]+)=([^&#]*)/g, 
-	url = window.location.href, 
-	params = {}, 
-	match; 
-var resetStat = 0;
-var assignedColor;
-while(match = regex.exec(url)) { params[match[1]] = match[2];}
+
+function createDiv() {	return document.createElement("div"); }
+function createInput() { return document.createElement("input"); }
+function createLabel() { return document.createElement("label"); }
+
+window.requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
+while(match = regex.exec(url)) params[match[1]] = match[2];
 console.log("sfmod.js loaded "+window.location.href);
 
-//checks the Public checkbox when creating a new comment
-if (document.getElementById("IsPublished") != undefined) {
+if(document.getElementById("IsPublished")!=undefined) { //checks the Public checkbox when creating a new comment
 	var a = document.getElementById("IsPublished");
-	a.checked = true
-}
-//adds the case number when you send an email.
-if (document.getElementById("p6") != undefined) {	
-	if (document.getElementById("p3") != undefined) {
-		var getCase = document.getElementById("p3");
-		var cNum = getCase.value
-	} else {
-		var getCase = document.getElementsByClassName("data2Col");
-		var cNum = getCase[3].textContent
-	}
-	var subjectField = document.getElementById("p6");
-	if (subjectField.value.match(cNum)) {
-		console.log("Match")
-	} else {
-		subjectField.value = subjectField.value+" [" + cNum+ "]"
-	}
+	a.checked = true;
 }
 
-if(params.fcf){
-	if (window.requestFileSystem) {
+if(document.getElementById("p6") != undefined) { //adds the case number when you send an email.
+	var subjectField,getCase,cNum;
+	if(document.getElementById("p3") != undefined) {
+		getCase = document.getElementById("p3");
+		cNum = getCase.value
+	} else {
+		getCase = document.getElementsByClassName("data2Col");
+		cNum = getCase[3].textContent
+	}
+	subjectField = document.getElementById("p6");
+	if(subjectField.value.match(cNum)) console.log("Match")
+	else subjectField.value = subjectField.value+" [" + cNum+ "]"
+}
+
+if(params.fcf) {
+	if(window.requestFileSystem) {
 		sf_read(labels);
 		setTimeout(
-			function() {
-				if(typeof(_RESULT)=="undefined") {
+			function() { //wait for the file system to check
+				if(typeof(_RESULT) == "undefined") {
 					initialSettings();
 					settingWindow("none");
 				}
 			}
-		, 1000); //wait for the file system to check
-	}	
+		, 1000); 
+	}
 	tier = document.getElementById(params.fcf+"_listSelect").selectedOptions[0].innerText;
 	statPortion();
 	refreshSF();
 	reminder();
-} else {//for individual case view
+} else { //for individual case view
 	var scv = setInterval(singleCaseView, 1000);
 	reminder();
-	
-	//popup reminder for Lead for Website
-	lfw_popup();
+	lfw_popup(); //popup reminder for Lead for Website
 }
 
 function lfw_popup() {
-	if(document.getElementById("j_id0:onlinecase:j_id41:j_id52:j_id53")==null || typeof(document.getElementById("j_id0:onlinecase:j_id41:j_id52:j_id53"))=="undefined") return;
-	
+	if(document.getElementById("j_id0:onlinecase:j_id41:j_id52:j_id53") == null || typeof(document.getElementById("j_id0:onlinecase:j_id41:j_id52:j_id53")) == "undefined") return;
 	if(window.location.href.match("CaseDetail") == false) return;
 	
 	var lfw_subject = document.getElementById("j_id0:onlinecase:j_id41:j_id52:j_id53").textContent.toLowerCase();
 	if(lfw_subject.match("lead from website"))
 	sf_popup("<h1>Reminder</h1>","Please be reminded that we have to follow the process indicated on this wiki article: <br><b>http://peg/wiki/index.php/lead-from-website-emails/</b><br> before handling this case.");
-	
 }
 
 function singleCaseView() {
-	if(document.getElementById("tsidLabel") == null || typeof(document.getElementById("tsidLabel"))=="undefined" || document.getElementById("tsidLabel").textContent != "Support") {
-		return;
-	}
+	if(document.getElementById("tsidLabel") == null || typeof(document.getElementById("tsidLabel")) == "undefined" || document.getElementById("tsidLabel").textContent != "Support") return;
 	
-	if(document.getElementById("j_id0:onlinecase:j_id41:sla_tracking:j_id127").textContent == "" || document.getElementById("j_id0:onlinecase:j_id41:sla_tracking:j_id127").textContent == " " || document.getElementById("j_id0:onlinecase:j_id41:sla_tracking:j_id127").textContent == null) {
-		return;
-	}
+	if(document.getElementById("j_id0:onlinecase:j_id41:sla_tracking:j_id127").textContent == "" || 
+	document.getElementById("j_id0:onlinecase:j_id41:sla_tracking:j_id127").textContent == " " || document.getElementById("j_id0:onlinecase:j_id41:sla_tracking:j_id127").textContent == null) return;
 	
-	var container = document.getElementById("container");
-	if(document.getElementById("timeLeftContainer")!= null) {
-		document.getElementById("timeLeftContainer").remove();
-	}
+	if(document.getElementById("timeLeftContainer") != null) document.getElementById("timeLeftContainer").remove();
 	
-	var timeLeftContainer = document.createElement("div");
-	timeLeftContainer.style.float = "left";
-	timeLeftContainer.style.paddingLeft = "20px";
-	timeLeftContainer.id = "timeLeftContainer";
-	var timeLeftCaption = document.createElement("h1");
-	timeLeftCaption.class = "pageType";
-	timeLeftCaption.textContent = "Time Remaining Left";
-	var timeBreakElem = document.createElement("br");
-	var timeLeftValue = document.createElement("h2");
-	timeLeftValue.style.fontSize = "1.8em";
-	timeLeftValue.style.fontWeight = "normal";
-	timeLeftValue.style.lineHeight = "1.1em";
+	var timeLeftContainer,timeLeftCaption,timeBreakElem,timeLeftValue,caseSla,container;
 	
-	var caseSla = getSLA_NOW(document.getElementById("j_id0:onlinecase:j_id41:sla_tracking:j_id127").textContent);
-	timeLeftValue.textContent = caseSla + " minutes.";
-	if(caseSla<60 && caseSla > 0) {
-		blinkDiv(timeLeftContainer, "#2c86ff");
-	} else if(caseSla<0) {
-		timeLeftValue.textContent = "Exceeded.";
-	}
+	timeLeftContainer 						= createDiv();
+	timeLeftContainer.id 					= "timeLeftContainer";
+	timeLeftContainer.style.float 			= "left";
+	timeLeftContainer.style.paddingLeft 	= "20px";
 	
-	timeLeftContainer.appendChild(timeLeftCaption);
+	timeLeftCaption 						= document.createElement("h1");
+	timeLeftCaption.class 					= "pageType";
+	timeLeftCaption.textContent 			= "Time Remaining Left";
+	timeBreakElem 							= document.createElement("br");
+	timeLeftValue 							= document.createElement("h2");
+	timeLeftValue.style.fontSize 			= "1.8em";
+	timeLeftValue.style.fontWeight 			= "normal";
+	timeLeftValue.style.lineHeight 			= "1.1em";
+	
+	caseSla 								= getSLA_NOW(document.getElementById("j_id0:onlinecase:j_id41:sla_tracking:j_id127").textContent);
+	timeLeftValue.textContent 				= caseSla + " minutes.";
+	if(caseSla < 60 && caseSla > 0)	blinkDiv(timeLeftContainer, "#2c86ff");
+	else if(caseSla < 0) timeLeftValue.textContent = "Exceeded.";
+	
 	timeLeftContainer.appendChild(timeBreakElem);
 	timeLeftContainer.appendChild(timeLeftValue);
+	timeLeftContainer.appendChild(timeLeftCaption);
+	container = document.getElementById("container");
 	container.appendChild(timeLeftContainer);
 }
 
@@ -144,7 +138,7 @@ function refreshSF() {
 	document.getElementById(params.fcf+"_wrapper").onmouseover = detectExceedInst;
 }
 
-function refreshRate(rate){
+function refreshRate(rate) {
 	console.log("setting refresh rate to " + rate);
 	clearInterval(sfRefresh);
 	sfRefresh = setInterval(function() {	
@@ -161,69 +155,61 @@ function detectExceedDelay() {
 }
 
 function detectExceedInst() {
-	if (window.requestFileSystem && _RESULT){
-		insertLegend(params.fcf+"_rolodex");
-	} else {
-		return;
-	}
+	if (window.requestFileSystem && _RESULT) insertLegend(params.fcf+"_rolodex");
+	else return;
 }
 
 function setupArray() {
 	Array.prototype.contains = function(v) {
-		for(var i = 0; i < this.length; i++) {
-			if(this[i] === v) return true;
-		}
+		for(var i = 0; i < this.length; i++) { if(this[i] === v) return true; }
 		return false;
 	};
 	Array.prototype.unique = function() {
 		var arr = [];
-		for(var i = 0; i < this.length; i++) {
-			if(!arr.contains(this[i])) {
-				arr.push(this[i]);
-			}
-		}
+		for(var i = 0; i < this.length; i++) { if(!arr.contains(this[i])) arr.push(this[i]); }
 		return arr; 
 	}
 }
-//status for agents and engineers
-function statPortion() {
+
+function statPortion() { //status for agents and engineers
 	setupArray();
 	if (!top.document.getElementById("optionButton")) {
-		var imgnode = document.createElement('img');
-		imgnode.src = chrome.runtime.getURL("images/stat.png");
-		imgnode.id ="statButton";
-		imgnode.setAttribute('style','Position:absolute');
-		imgnode.onclick = function() {
+		var imgnode 		= document.createElement('img');
+		imgnode.src 		= chrome.runtime.getURL("images/stat.png");
+		imgnode.id 			= "statButton";
+		imgnode.onclick 	= function() {
 			sf_popup("Case Status", "<div style='text-align:left;'>" + showStatFunc() + "</div>");
 		}
-		imgnode.style.left = String((window.innerWidth/2)-40) + "px";
-		imgnode.style.cursor="pointer";
-		imgnode.style.top = "1px";
-		imgnode.style.height = "30px";
-		imgnode.style.width = "30px";
-		imgnode.style.align = "center";
+		imgnode.style.top 		= "1px";
+		imgnode.style.left 		= String((window.innerWidth/2)-40) + "px";
+		imgnode.style.width 	= "30px";
+		imgnode.style.align 	= "center";
+		imgnode.style.cursor	= "pointer";
+		imgnode.style.height 	= "30px";
+		imgnode.style.position	= "absolute";
 		top.document.body.appendChild(imgnode);
-		var optnode = document.createElement('img');
-		optnode.src = chrome.runtime.getURL("images/settingIcon.png");
-		optnode.setAttribute('style','Position:absolute');
-		optnode.id ="optionButton";
-		optnode.onclick = function() {
+		
+		var optnode 		= document.createElement('img');
+		optnode.src 		= chrome.runtime.getURL("images/settingIcon.png");
+		optnode.id 			="optionButton";
+		optnode.onclick 	= function() {
 			initSettings = buildInitSettings();
 			settingWindow("block");
 		}
-		optnode.style.left = String((window.innerWidth/2)) + "px";
-		optnode.style.cursor="pointer";
-		optnode.style.top = "1px";
-		optnode.style.height = "30px";
-		optnode.style.width = "30px";
-		optnode.style.align = "center";
+		optnode.style.top 		= "1px";
+		optnode.style.left 		= String((window.innerWidth/2)) + "px";
+		optnode.style.width 	= "30px";
+		optnode.style.align 	= "center";
+		optnode.style.cursor	="pointer";
+		optnode.style.height 	= "30px";
+		optnode.style.position	= "absolute";
 		top.document.body.appendChild(optnode);	
 	}
 }
 
 function showStatFunc() {
-	var nCase = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-CASES_STATUS");
-	var hStat = aStat = nStat = rStat = dStat = 0;
+	var nCase = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-CASES_STATUS"),
+	hStat = aStat = nStat = rStat = dStat = 0, ownerArray = [];;
 	for (var q=0; q<nCase.length; q++) {
 		switch (nCase[q].textContent) {
 			case "Handling" : hStat++; break;
@@ -233,67 +219,47 @@ function showStatFunc() {
 			case "De-escalated to Tier 1" : dStat++; break;
 		}
 	}			
-	ownerName = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-00NC0000005C8Sw");
 	tier = document.getElementById(params.fcf+"_listSelect").selectedOptions[0].innerText;
-	if(tier=="Online Support Tier 1") {
+	ownerName = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-00NC0000005C8Sw");
+	if(tier == "Online Support Tier 1")
 		ownerName = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-OWNER_NAME");
-	}else if(tier=="Online Support Tier 2") {
+	else if(tier == "Online Support Tier 2")
 		ownerName = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-00NC0000005C8Sx");
-	}else if(tier=="Online Support Tier 3") {
+	else if(tier == "Online Support Tier 3")
 		ownerName = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-OWNER_NAME");
-	}
 	
-	var ownerArray = [];
-	for (var r=0;r<ownerName.length; r++) {
-		ownerArray.push(ownerName[r].textContent);
-	}
-	var owner = ownerArray.unique();	
-	
+	for (var r=0;r<ownerName.length; r++) {	ownerArray.push(ownerName[r].textContent); }
+	var owner = ownerArray.unique();
 	return 'Total number of case: '+nCase.length+'<br><br>Case breakdown per status:<br>Handling: '+hStat+'<br>Assigned: '+aStat+'<br>New: '+nStat+'<br>Returned to support: '+rStat+'<br>De-escalated T1: '+ dStat+'<br><br>Handled and assigned cases per engineer: <br>'+getOwner(owner);
 }
 
 function getOwner(vals) {
-	var tempStr="";
-	var tempNum=0;
-	var cnt=0;
-	nArray = []
-	for (var w = 0; w < vals.length; w++) {
+	var tempStr = "", tempNum = 0, cnt = 0, nArray = [];
+	for (var w=0 ; w<vals.length ; w++) {
 		if (vals[w] != undefined && vals[w] != "Online Support Tier 1" && vals[w].length > 1) {
-			cnt=0;
-			for (var g = 0; g<ownerName.length; g++) {
-				if (ownerName[g].textContent.match(vals[w])) {					
-					cnt++;					
-				}
+			cnt = 0;
+			for (var g=0; g<ownerName.length ; g++) {
+				if (ownerName[g].textContent.match(vals[w]))			
+					cnt++;
 			}
 			tempStr += String("\n"+vals[w]+": "+cnt + "<br>")
 			cnt=0;
 		}
-	}	
+	}
 	return tempStr
 }
-//file handling starts here
-function errorHandler(e) { 
+
+function errorHandler(e) { //file handling starts here
 	msg = '';
 	switch (e.code) {
-		case FileError.QUOTA_EXCEEDED_ERR:
-			msg = 'QUOTA_EXCEEDED_ERR';
-			break;
-		case FileError.NOT_FOUND_ERR:
-			msg = 'NOT_FOUND_ERR';
-			if(typeof(initSettings)!="undefined")
-				setTimeout(sf_write(JSON.stringify(initSettings), true, labels), 1000); //will persist
-			break;
-		case FileError.SECURITY_ERR:
-			msg = 'SECURITY_ERR';
-			break;
-		case FileError.INVALID_MODIFICATION_ERR:
-			msg = 'INVALID_MODIFICATION_ERR';
-			break;
-		case FileError.INVALID_STATE_ERR:
-			msg = 'INVALID_STATE_ERR';
-			break;
-		default:
-			msg = 'Unknown Error';
+		case FileError.QUOTA_EXCEEDED_ERR			: msg = 'QUOTA_EXCEEDED_ERR'; break;
+		case FileError.SECURITY_ERR					: msg = 'SECURITY_ERR'; break;
+		case FileError.INVALID_MODIFICATION_ERR		: msg = 'INVALID_MODIFICATION_ERR'; break;
+		case FileError.INVALID_STATE_ERR			: msg = 'INVALID_STATE_ERR'; break;
+		case FileError.NOT_FOUND_ERR				: msg = 'NOT_FOUND_ERR';
+		default										: msg = 'Unknown Error'; break;
+			if(typeof(initSettings)!="undefined") //if save will fail, this will try it again
+				sf_write(JSON.stringify(initSettings), true, labels);
 			break;
 	};
 	console.log('Error: ' + msg);	
@@ -302,13 +268,13 @@ function errorHandler(e) {
 function _CREATEFILE(filename) {
 	window.requestFileSystem(persistenceType, fileSize, function(fs) {
 		fs.root.getFile(filename, {create: true, exclusive: true}, function(fileEntry) {
-			
+			//
 		}, errorHandler);
 	}, errorHandler);
 }
 
 function _WRITETOFILE(val, filename) {
-	_RESULT=val;
+	_RESULT = val;
 	window.requestFileSystem(persistenceType, fileSize, function(fs) {
 		fs.root.getFile(filename, {create: true}, function(fileEntry) {
 			fileEntry.createWriter(function(fileWriter) {
@@ -327,7 +293,7 @@ function _APPENDTOFILE(val, filename) {
 			fileEntry.createWriter(function(fileWriter) {
 				fileWriter.onwriteend = function(e) {console.log('Write completed.');};
 				fileWriter.onerror = function(e) {console.log('Write failed: ' + e.toString());};
-				fileWriter.seek(fileWriter.length);//go to EOF and start writing there.
+				fileWriter.seek(fileWriter.length);
 				var blob = new Blob([val], {type: 'text/plain'});
 				fileWriter.write(blob);
 			}, errorHandler);
@@ -341,7 +307,7 @@ function _READFROMFILE(filename) {
 			fileEntry.file(function(file) {
 				var reader = new FileReader();
 				reader.onloadend = function(e) {
-					_RESULT = this.result; //the contents of the file
+					_RESULT = this.result;
 				};
 				reader.readAsText(file);
 			}, errorHandler);
@@ -361,66 +327,47 @@ function _DELETEFILE(filename) {
 }
 
 function initiateFileSystem() {
-  window.requestFileSystem(persistenceType, fileSize, function(filesystem) {
-	fs = filesystem;
-  }, errorHandler);
+	window.requestFileSystem(persistenceType, fileSize, function(filesystem) { fs = filesystem; }, errorHandler);
 }
 
-function sf_create(filename) {
-	setTimeout(_CREATEFILE(filename), 2000);
-}
-
+function sf_create(filename) {_CREATEFILE(filename);}
+function sf_delete(filename) { setTimeout(_DELETEFILE(filename), 2000); }
 function sf_write(val, willreplace, filename) {
-	if(willreplace) {
-		sf_delete(filename);
-		sf_create(filename);
-		setTimeout(_WRITETOFILE(val, filename),2000);
-	} else {
-		if(typeof(_RESULT)=="undefined") {
+	try {
+		if(willreplace) {
+			setTimeout(sf_delete(filename),1000);
+			setTimeout(sf_create(filename), 1000);
 			setTimeout(_WRITETOFILE(val, filename),2000);
+		} else {
+			if(typeof(_RESULT) == "undefined") setTimeout(_WRITETOFILE(val, filename),2000);
 		}
-	}
+	}catch(e){}
 }
 
 function sf_append(val, filename) {	
 	try {
-	if(typeof(val)=="undefined" && val == null) {
-		console.log("Error: sf_append : trying to save with val null or undefined."); 
-		return;
-	}
-	if(typeof(initSettings)=="string" || typeof(initSettings)!="object") return;
-	
-	var itr = initSettings.settings.reserveRules;
-	var temp = [];
-	for(var x1=0 ; x1<itr ;x1++) {
-		temp[x1] = initSettings.rules[initSettings.rules.length-(x1+1)];
-	}
-	for(var x2=0 ; x2<itr ; x2++)  {
-		initSettings.rules.splice(initSettings.rules.length-1, 1);
-	}
-	initSettings.rules.push(val);
-	for(var x3=itr-1 ; x3>-1 ; x3--) {
-		initSettings.rules.push(temp[x3]);
-	}
-	}catch(e){
-		console.log("Error: sf_append : contact windhel");
-	}finally{
-		sf_delete(labels);
-		sf_write(JSON.stringify(initSettings), false, labels)
-	}
+		if(typeof(val) == "undefined" && val == null) {
+			console.log("Error: sf_append : trying to save with val null or undefined."); 
+			return;
+		}
+		if(typeof(initSettings)=="string" || typeof(initSettings)!="object") return;
+		
+		var itr = initSettings.settings.reserveRules;
+		var temp = [];
+		for(var x1=0 ; x1<itr ;x1++) { temp[x1] = initSettings.rules[initSettings.rules.length-(x1+1)]; }
+		for(var x2=0 ; x2<itr ; x2++) { initSettings.rules.splice(initSettings.rules.length-1, 1); }
+		initSettings.rules.push(val);
+		for(var x3=itr-1 ; x3>-1 ; x3--) { initSettings.rules.push(temp[x3]); }
+	} catch(e) { console.log("Error: sf_append : contact windhel"); } 
+	//finally {	sf_write(JSON.stringify(initSettings), true, labels);	}
 }
 
 function sf_read(filename) {
 	setTimeout(_READFROMFILE(filename), 2000);
 	setTimeout(function() {
-		if(typeof(_RESULT)=="undefined" || _RESULT == "_RESULT")
-			console.log("sf_read " + _RESULT);
+		if(typeof(_RESULT) == "undefined" || _RESULT == "_RESULT") console.log("sf_read " + _RESULT);
 	}, 1000);
 	return _RESULT;
-}
-
-function sf_delete(filename) {
-	setTimeout(_DELETEFILE(filename), 2000);
 }
 
 function initialSettings() { 
@@ -449,93 +396,92 @@ function initialSettings() {
 function buildInitSettings() {
 	setTimeout(
 		function() {
-			if(typeof(_RESULT)=="undefined" || _RESULT == "undefined" || _RESULT == "") {
-				initialSettings();
-			}
+			if(typeof(_RESULT)=="undefined" || _RESULT == "undefined" || _RESULT == "")	initialSettings(); 
 		}
 	, 1000);
 	return JSON.parse(_RESULT);
 }
 
 function createButton(text) {
-	var btn = document.createElement("a");
-	btn.style.padding = "3px";
-	btn.style.margin = "5px";
-	
-	btn.style.webkitAppearance = "none";
-	btn.style.webkitUserSelect = "none";
-	btn.style.backgroundImage = "-webkit-linear-gradient(#ededed, #ededed 38%, #dedede)";
-	btn.style.border = "1px solid rgba(0, 0, 0, 0.25)";
-	btn.style.borderRadius = "2px";
-	btn.style.boxShadow = "0 1px 0 rgba(0, 0, 0, 0.08), inset 0 1px 2px rgba(255, 255, 255, 0.75)";
-	btn.style.color = "#444";
-	btn.style.textShadow = "0 1px 0 rgb(240, 240, 240)";
-	
-	btn.style.cursor = "pointer";
-	btn.style.textDecoration = "none";
-	btn.innerText = text;
-	/*
-	btn.onmouseover = function() { this.style.background = "orange"; }
-	btn.onmouseout = function() { this.style.background = "#4d90fe"; }
-	btn.onmousedown = function() { this.style.background = "red"; }
-	btn.onmouseup = function() { this.style.background = "orange"; }
-	*/
+	var btn 					= document.createElement("a");
+	btn.innerText 				= text;
+	btn.style.color 			= "#444";
+	btn.style.cursor 			= "pointer";
+	btn.style.border 			= "1px solid rgba(0, 0, 0, 0.25)";
+	btn.style.margin 			= "5px";
+	btn.style.padding 			= "3px";
+	btn.style.boxShadow 		= "0 1px 0 rgba(0, 0, 0, 0.08), inset 0 1px 2px rgba(255, 255, 255, 0.75)";
+	btn.style.textShadow 		= "0 1px 0 rgb(240, 240, 240)";
+	btn.style.borderRadius 		= "2px";
+	btn.style.textDecoration 	= "none";
+	btn.style.backgroundImage 	= "-webkit-linear-gradient(#ededed, #ededed 38%, #dedede)";
+	btn.style.webkitAppearance 	= "none";
+	btn.style.webkitUserSelect 	= "none";
 	return btn;
 }
 
 function settingWindow(e) {
 	if(document.getElementById("settingsDimmer"))document.getElementById("settingsDimmer").remove();
 	if(document.getElementById("settingsContainer"))document.getElementById("settingsContainer").remove();
-	var dimmer = document.createElement("div");
-	dimmer.id = "settingsDimmer";
-	dimmer.style.position = "fixed";
-	dimmer.style.zIndex = "9999";
-	dimmer.style.display = e;
-	dimmer.style.height = "1500px";
-	dimmer.style.width = "1500px";
-	dimmer.style.opacity = "0.5";
+	
+	var dimmer,settingsContainer,headerContainer,logoHandler,logoCaption,refreshHolder,refreshLabel,refreshText,refreshLabel2;
+	var topButtonContainer,closeButton,resetButton,bottomButtonContainer,saveButton,saveCloseButton,addButton;
+	var rulesCOntainer,settings,captionLabel,ruleLabel,topSetCont,botSetCont;
+	
+	var captionHolder = [],valueHolder = [],textColor = [],rule = [],deleteRule = [];
+	
+	dimmer 					= createDiv();
+	dimmer.id 				= "settingsDimmer";
+	dimmer.style.top 		= "0px";
+	dimmer.style.width 		= "1500px";
+	dimmer.style.height 	= "1500px";
+	dimmer.style.zIndex 	= "9999";
+	dimmer.style.display 	= e;
+	dimmer.style.opacity 	= "0.5";
+	dimmer.style.position 	= "fixed";
 	dimmer.style.background = "black";
-	dimmer.style.top = "0px";
 	top.document.body.appendChild(dimmer);
-	var settingsContainer = document.createElement("div");
-	settingsContainer.setAttribute("style", "Position:absolute");
-	settingsContainer.id = "settingsContainer";
-	settingsContainer.style.display = e;
-	settingsContainer.style.zIndex = "10000";
-	settingsContainer.style.height = "auto";
-	settingsContainer.style.width = "400px";
-	settingsContainer.style.zIndex="99999";
-	settingsContainer.style.textAlign = "center";
-	settingsContainer.style.padding = "30px 10px 30px 10px";
-	settingsContainer.style.background = "rgb(248,248,248)";
-	settingsContainer.style.margin = "20px 10px 20px 10px";
-	settingsContainer.style.outline = "2px solid rgb(183,199,207)";
-	settingsContainer.style.top = "0px";
-	settingsContainer.style.left = String((window.innerWidth/2)-200)+"px";
+	
+	settingsContainer 					= createDiv();
+	settingsContainer.id 				= "settingsContainer";
+	settingsContainer.style.top 		= "0px";
+	settingsContainer.style.left 		= String((window.innerWidth/2)-200)+"px";
+	settingsContainer.style.width 		= "400px";
+	settingsContainer.style.height 		= "auto";
+	settingsContainer.style.margin 		= "20px 10px 20px 10px";
+	settingsContainer.style.zIndex		="99999";
+	settingsContainer.style.outline 	= "2px solid rgb(183,199,207)";
+	settingsContainer.style.padding 	= "30px 10px 30px 10px";
+	settingsContainer.style.display 	= e;
+	settingsContainer.style.position	= "absolute";
+	settingsContainer.style.textAlign 	= "center";
+	settingsContainer.style.background 	= "rgb(248,248,248)";
 	top.document.body.appendChild(settingsContainer);
-	var headerContainer = document.createElement("div");
-	headerContainer.style.textAlign = "center";
-	var logoHandler = document.createElement("div");
-	logoHandler.style.width = "100%";
-	logoHandler.style.height = "105px";
-	logoHandler.style.backgroundImage = 'url('+chrome.runtime.getURL("images/dgLogo.png")+')';
-	logoHandler.style.backgroundRepeat = "no-repeat";
-	var logoCaption = document.createElement("div");
+	
+	headerContainer 					= createDiv();
+	headerContainer.style.textAlign 	= "center";
+	logoHandler 						= createDiv();
+	logoHandler.style.width 			= "100%";
+	logoHandler.style.height 			= "105px";
+	logoHandler.style.backgroundImage 	= 'url('+chrome.runtime.getURL("images/dgLogo.png")+')';
+	logoHandler.style.backgroundRepeat 	= "no-repeat";
+	logoCaption 				= createDiv();
+	logoCaption.innerText 		= "SF Chrome Extension Settings";
 	logoCaption.style.textAlign = "center";
-	logoCaption.innerText = "SF Chrome Extension Settings";
 	headerContainer.appendChild(logoHandler);
-	var topButtonContainer = document.createElement("div");
-	topButtonContainer.style.textAlign = "right";
-	topButtonContainer.style.width = "100%";
-	topButtonContainer.style.marginBottom = "20px";
-	var closeButton = createButton("close");
+	
+	topButtonContainer 						= createDiv();
+	topButtonContainer.style.width 			= "100%";
+	topButtonContainer.style.textAlign 		= "right";
+	topButtonContainer.style.marginBottom 	= "20px";
+	closeButton = createButton("close");
 	closeButton.onclick = function() { 
 		settingsContainer.style.display = "none";
 		dimmer.style.display = "none";
 		settingsContainer.remove();
 		dimmer.remove();
 	}
-	var resetButton = createButton("Default Settings");
+	resetButton = createButton("Default Settings");
 	if(resetStat>0) {
 		resetButton.setAttribute('disabled', 'disabled');
 		resetButton.style.display = "none";
@@ -553,102 +499,97 @@ function settingWindow(e) {
 	}
 	topButtonContainer.appendChild(resetButton);
 	topButtonContainer.appendChild(closeButton);
-	var refreshHolder = document.createElement("div");
-	refreshHolder.style.float = "left";
-	refreshHolder.style.display = "table";
-	refreshHolder.style.textAlign = "left";
-	var refreshLabel = document.createElement("div");
-	refreshLabel.innerText = "Refresh Rate: ";
-	refreshLabel.style.display = "table-cell";
-	var refreshText = document.createElement("input");
-	refreshText.type = "text";
-	refreshText.name = "caption";
-	refreshText.maxLength = 8;
-	refreshText.size = 2;
-	refreshText.value = initSettings.settings.refreshRate;
-	refreshText.style.display = "table-cell";
+	
+	refreshHolder 					= createDiv();
+	refreshHolder.style.float 		= "left";
+	refreshHolder.style.display 	= "table";
+	refreshHolder.style.textAlign 	= "left";
+	refreshLabel 					= createDiv();
+	refreshLabel.innerText 			= "Refresh Rate: ";
+	refreshLabel.style.display 		= "table-cell";
+	refreshText 				= createInput();
+	refreshText.type 			= "text";
+	refreshText.name 			= "caption";
+	refreshText.size 			= 2;
+	refreshText.value 			= initSettings.settings.refreshRate;
+	refreshText.maxLength 		= 10;
+	refreshText.style.display 	= "table-cell";
 	refreshText.onchange = function() {
 		initSettings.settings.refreshRate = this.value;
 	}
-	var refreshLabel2 = document.createElement("div");
-	refreshLabel2.innerText = "milliseconds";
+	refreshLabel2 				= createDiv();
+	refreshLabel2.innerText 	= "milliseconds";
 	refreshLabel2.style.display = "table-cell";
 	refreshHolder.appendChild(refreshLabel);
 	refreshHolder.appendChild(refreshText);
 	refreshHolder.appendChild(refreshLabel2);
-	var bottomButtonContainer = document.createElement("div");
-	bottomButtonContainer.style.textAlign = "right";
-	bottomButtonContainer.style.width = "100%";
-	bottomButtonContainer.style.marginTop = "20px";
-	var saveButton = createButton("save");
-	var saveCloseButton = createButton("save and close");
+	bottomButtonContainer 					= createDiv();
+	bottomButtonContainer.style.width 		= "100%";
+	bottomButtonContainer.style.textAlign 	= "right";
+	bottomButtonContainer.style.marginTop 	= "20px";
+	saveCloseButton = createButton("save and close");
 	saveCloseButton.onclick = function() { 
-		setTimeout(sf_write(JSON.stringify(initSettings), true, labels), 1000);
+		sf_write(JSON.stringify(initSettings), true, labels);
 		settingsContainer.style.display = "none";
 		dimmer.style.display = "none";
 		settingsContainer.remove();
 		dimmer.remove();
 		refreshRate(initSettings.settings.refreshRate);
 	}
-	var addButton = createButton("add");
+	addButton = createButton("add");
 	addButton.onclick = function() {
 		settingsContainer.appendChild(buildAddLabels(settingsContainer, dimmer));
 	}
 	bottomButtonContainer.appendChild(refreshHolder);
 	bottomButtonContainer.appendChild(addButton);
 	bottomButtonContainer.appendChild(saveCloseButton);
-	var captionHolder = [];
-	var valueHolder = [];
-	var textColor = [];
-	var rule = [];
-	var deleteRule = [];
-	var rulesCOntainer = document.createElement("div");
-	rulesCOntainer.style.overflowX = "scroll";
-	rulesCOntainer.style.height = "350px";
-	rulesCOntainer.style.outline = "2px solid rgb(183,199,207)";
+	rulesCOntainer 					= createDiv();
+	rulesCOntainer.style.overflowX 	= "scroll";
+	rulesCOntainer.style.height 	= "350px";
+	rulesCOntainer.style.outline 	= "2px solid rgb(183,199,207)";
 	settingsContainer.appendChild(headerContainer);
 	settingsContainer.appendChild(topButtonContainer);
-	if(typeof(initSettings)=="undefined" || initSettings.length < 0) return;
+	if(typeof(initSettings) == "undefined" || initSettings.length < 0) return;
 	for(var i=0 ; i<initSettings.rules.length ; i++) {
-		var settings = document.createElement("div");
-		settings.style.width = "95%";
-		settings.style.margin="5px";
-		settings.style.padding="5px";
-		settings.style.border = "1px solid #C0A2C7";
-		captionHolder[i] = document.createElement("div");
-		textColor[i] = document.createElement("input");
-		rule[i] = document.createElement("input");
-		var captionLabel = document.createElement("div");
-		captionLabel.innerText = initSettings.rules[i].caption.replace(initSettings.rules[i].variable, initSettings.rules[i].value);
-		captionLabel.style.display = "inline";
-		captionHolder[i].style.float ="left";
-		captionHolder[i].style.textAlign = "left";
-		captionHolder[i].style.margin = "3px";
+		settings 				= createDiv();
+		settings.style.width 	= "95%";
+		settings.style.margin	="5px";
+		settings.style.padding	="5px";
+		settings.style.border 	= "1px solid #C0A2C7";
+		rule[i] 				= createInput();
+		textColor[i] 			= createInput();
+		captionHolder[i] 		= createDiv();
+		captionLabel 			= createDiv();
+		captionLabel.innerText 	= initSettings.rules[i].caption.replace(initSettings.rules[i].variable, initSettings.rules[i].value);
+		captionLabel.style.display 			= "inline";
+		captionHolder[i].style.float 		="left";
+		captionHolder[i].style.margin 		= "3px";
+		captionHolder[i].style.textAlign 	= "left";
 		captionHolder[i].appendChild(captionLabel);
-		textColor[i].setAttribute("type","color");
-		textColor[i].setAttribute("class","color");
-		textColor[i].style.display ="table-cell";
-		textColor[i].style.width = "100px";
-		textColor[i].style.float = "right";
-		textColor[i].style.marginRight = "5px";
-		textColor[i].value = initSettings.rules[i].color;
-		textColor[i].title = initSettings.rules[i].color;
+		textColor[i].value 				= initSettings.rules[i].color;
+		textColor[i].title 				= initSettings.rules[i].color;
+		textColor[i].style.width 		= "100px";
+		textColor[i].style.float 		= "right";
+		textColor[i].style.display 		="table-cell";
+		textColor[i].style.marginRight 	= "5px";
 		textColor[i].setAttribute('colorid', 'sf|'+i)
 		textColor[i].onchange = function() {
 			var flag = this.getAttribute("colorid").split("|")[1];
 			initSettings.rules[flag].color = this.value; 
 		}
-		rule[i] = document.createElement("input");
-		rule[i].style.width = "70%";
-		rule[i].value = initSettings.rules[i].rule;
-		var ruleLabel = document.createElement("label");
-		ruleLabel.innerText = "Rule: ";
-		var topSetCont = document.createElement("div");
-		topSetCont.setAttribute("style","display:table");
-		topSetCont.style.width = "100%";
-		var botSetCont = document.createElement("div");
-		botSetCont.setAttribute("style","display:table");
-		botSetCont.style.width = "100%";
+		textColor[i].setAttribute("type","color");
+		textColor[i].setAttribute("class","color");
+		rule[i] 				= createInput();
+		rule[i].value 			= initSettings.rules[i].rule;
+		rule[i].style.width 	= "70%";
+		ruleLabel 				= createLabel();
+		ruleLabel.innerText 	= "Rule: ";
+		topSetCont 				= createDiv();
+		topSetCont.style.display= "table";
+		topSetCont.style.width 	= "100%";
+		botSetCont 				= createDiv();
+		botSetCont.style.display="table";
+		botSetCont.style.width 	= "100%";
 		botSetCont.style.textAlign = "left";
 		deleteRule[i] = createButton("Delete");
 		deleteRule[i].setAttribute("itemID", i);
@@ -660,7 +601,7 @@ function settingWindow(e) {
 			dimmer.remove();
 			setTimeout(settingWindow("block"), 2000);
 		}
-		valueHolder[i] = document.createElement("input");
+		valueHolder[i] = createInput();
 		if(initSettings.rules[i].editMode==1 || initSettings.rules[i].editMode==4) {
 			valueHolder[i].value = initSettings.rules[i].value;
 			valueHolder[i].id = "valueHolder";
@@ -676,9 +617,7 @@ function settingWindow(e) {
 		}
 		topSetCont.appendChild(captionHolder[i]);
 		topSetCont.appendChild(textColor[i]);
-		if(initSettings.rules[i].editMode==1 || initSettings.rules[i].editMode==3) {
-			topSetCont.appendChild(deleteRule[i]);
-		}
+		if(initSettings.rules[i].editMode==1 || initSettings.rules[i].editMode==3) topSetCont.appendChild(deleteRule[i]);
 		settings.appendChild(topSetCont);
 		rulesCOntainer.appendChild(settings);
 	}
@@ -687,76 +626,85 @@ function settingWindow(e) {
 }
 
 function buildAddLabels(settingsContainer, dimmer) {
-	var addLabelsContainer = document.createElement("div");
-	addLabelsContainer.id = "addlabels"
-	addLabelsContainer.style.outline = "3px solid #C0A2C7";
-	addLabelsContainer.style.width = "100%";
-	addLabelsContainer.style.marginTop = "20px";
-	addLabelsContainer.style.marginBottom = "20px";
-	addLabelsContainer.style.paddingTop = "20px";
-	addLabelsContainer.style.paddingBottom = "20px";
-	var captionHolder = document.createElement("div");
+	var addLabelsContainer,captionHolder,captionLabel,captionText,colorHolder,colorLabel,colorText,rulesHolder,rulesLabel,rulesText,varHolder,varLabel,varText,valueHolder,valueLabel,valueText,advanceHolder,checkAdvance,checkLabel,dynaAdvance,dynaLabel;
+	var buttonContainer,saveBtn,closeBtn;
+
+	addLabelsContainer 						= createDiv();
+	addLabelsContainer.id 					= "addlabels"
+	addLabelsContainer.style.outline 		= "3px solid #C0A2C7";
+	addLabelsContainer.style.width 			= "100%";
+	addLabelsContainer.style.marginTop 		= "20px";
+	addLabelsContainer.style.marginBottom 	= "20px";
+	addLabelsContainer.style.paddingTop 	= "20px";
+	addLabelsContainer.style.paddingBottom 	= "20px";
+	
+	captionHolder 				= createDiv();
 	captionHolder.style.display = "table";		
-	var captionLabel = document.createElement("div");
-	captionLabel.innerText = "Account: ";
-	captionLabel.style.display = "table-cell";
-	captionLabel.style.width = "100px";
-	var captionText = document.createElement("input");
-	captionText.type = "text";
-	captionText.name = "caption";
-	captionHolder.appendChild(captionLabel);
+	captionLabel 				= createDiv();
+	captionLabel.innerText 		= "Account: ";
+	captionLabel.style.width	= "100px";
+	captionLabel.style.display 	= "table-cell";
+	captionText 				= createInput();
+	captionText.type 			= "text";
+	captionText.name 			= "caption";
 	captionHolder.appendChild(captionText);
-	var colorHolder = document.createElement("div");
-	colorHolder.style.display = "table";
-	var colorLabel = document.createElement("div");
-	colorLabel.innerText = "Color: ";
-	colorLabel.style.display = "table-cell";
-	colorLabel.style.width = "100px";
-	var colorText = document.createElement("input");
-	colorText.type = "color";
-	colorText.name = "color";
+	captionHolder.appendChild(captionLabel);
+	
+	colorHolder 				= createDiv();
+	colorHolder.style.display 	= "table";
+	colorLabel 					= createDiv();
+	colorLabel.innerText 		= "Color: ";
+	colorLabel.style.width 		= "100px";
+	colorLabel.style.display 	= "table-cell";
+	colorText 					= createInput();
+	colorText.type 				= "color";
+	colorText.name 				= "color";
 	colorHolder.appendChild(colorLabel);
 	colorHolder.appendChild(colorText);
-	var rulesHolder = document.createElement("div");
-	rulesHolder.style.display = "table";
-	var rulesLabel = document.createElement("div");
-	rulesLabel.innerText = "Rules: ";
-	rulesLabel.style.display = "table-cell";
-	rulesLabel.style.width = "100px";
-	var rulesText = document.createElement("input");
-	rulesText.type = "text";
-	rulesText.name = "rules";
-	var varHolder = document.createElement("div");
-	varHolder.style.display = "table";
-	var varLabel = document.createElement("div");
-	varLabel.innerText = "Variable: ";
-	varLabel.style.display = "table-cell";
-	varLabel.style.width = "100px";
-	var varText = document.createElement("input");
-	varText.type = "text";
+	
+	rulesHolder 				= createDiv();
+	rulesHolder.style.display 	= "table";
+	rulesLabel 					= createDiv();
+	rulesLabel.innerText 		= "Rules: ";
+	rulesLabel.style.width 		= "100px";
+	rulesLabel.style.display 	= "table-cell";
+	rulesText 					= createInput();
+	rulesText.type 				= "text";
+	rulesText.name 				= "rules";
+	
+	varHolder 					= createDiv();
+	varHolder.style.display 	= "table";
+	varLabel 					= createDiv();
+	varLabel.innerText 			= "Variable: ";
+	varLabel.style.width 		= "100px";
+	varLabel.style.display 		= "table-cell";
+	varText 					= createInput();
+	varText.type 				= "text";
+	varText.name 				= "value";
+	varText.value 				= "#XX";
 	varText.setAttribute('disabled', 'disabled');
-	varText.name = "value";
-	varText.value = "#XX";
-	var valueHolder = document.createElement("div");
-	valueHolder.style.display = "table";
-	var valueLabel = document.createElement("div");
-	valueLabel.innerText = "Value: ";
-	valueLabel.style.display = "table-cell";
-	valueLabel.style.width = "100px";
-	var valueText = document.createElement("input");
-	valueText.type = "text";
-	valueText.name = "value";
-	var advanceHolder = document.createElement("div");
+	
+	valueHolder 				= createDiv();
+	valueHolder.style.display 	= "table";
+	valueLabel 					= createDiv();
+	valueLabel.innerText 		= "Value: ";
+	valueLabel.style.width 		= "100px";
+	valueLabel.style.display 	= "table-cell";
+	valueText 					= createInput();
+	valueText.type 				= "text";
+	valueText.name 				= "value";
+	
+	advanceHolder 				= createDiv();
+	advanceHolder.style.width 	= "100%";	
 	advanceHolder.style.display = "none";
-	advanceHolder.style.width = "100%";	
-	var checkAdvance = document.createElement("input");
-	var checkLabel = document.createElement("label");
-	checkLabel.innerText = "advance";
-	checkAdvance.type = "checkbox";
-	var dynaAdvance = document.createElement("input");
-	var dynaLabel = document.createElement("label");
-	dynaLabel.innerText = "dynamic";
-	dynaAdvance.type = "checkbox";
+	checkAdvance 				= createInput();
+	checkAdvance.type 			= "checkbox";
+	checkLabel 					= createLabel();
+	checkLabel.innerText 		= "advance";
+	dynaAdvance 				= createInput();
+	dynaAdvance.type 			= "checkbox";
+	dynaLabel					= createLabel();
+	dynaLabel.innerText 		= "dynamic";
 	checkAdvance.onchange = function() {
 		if(checkAdvance.checked) {
 			rulesHolder.appendChild(rulesLabel);
@@ -792,28 +740,28 @@ function buildAddLabels(settingsContainer, dimmer) {
 	}
 	advanceHolder.appendChild(checkAdvance);
 	advanceHolder.appendChild(checkLabel);
-	var buttonContainer = document.createElement("div");
-	buttonContainer.style.textAlign = "right";
-	buttonContainer.style.width = "100%";
-	buttonContainer.style.marginTop = "20px";
-	var saveBtn = createButton("save");
+	
+	buttonContainer 					= createDiv();
+	buttonContainer.style.width 		= "100%";
+	buttonContainer.style.textAlign 	= "right";
+	buttonContainer.style.marginTop 	= "20px";
+	saveBtn = createButton("Add to list");
 	saveBtn.onclick = function() { 
-		if((typeof(captionText.value) == "undefined" || captionText.value == "")) {
-			alert("Account is required.");
-		} else {
-			var val = {};
+		if((typeof(captionText.value) == "undefined" || captionText.value == ""))alert("Account is required.");
+		else {
+			var val 	= {};
+			val.color 	= colorText.value;
 			val.caption = captionText.value;
-			val.color = colorText.value;
 			if(checkAdvance.checked && dynaAdvance.checked){
-				val.rule = rulesText.value;
-				val.editMode = 1;
-				val.variable = varText.value;
-				val.value = valueText.value;
+				val.rule 		= rulesText.value;
+				val.value 		= valueText.value;
+				val.editMode 	= 1;
+				val.variable 	= varText.value;
 			}else{
-				val.rule = "#ACCOUNT.toLowerCase().match('#XX'.toLowerCase()) || #PUBNAME.toLowerCase().match('#XX'.toLowerCase())";//"#ACCOUNT.match('#XX')";//
-				val.editMode = 3;
-				val.variable = "#XX";
-				val.value = captionText.value;
+				val.rule 		= "#ACCOUNT.toLowerCase().match('#XX'.toLowerCase()) || #PUBNAME.toLowerCase().match('#XX'.toLowerCase())";
+				val.value 		= captionText.value;
+				val.editMode 	= 3;
+				val.variable 	= "#XX";
 			}
 			sf_append(val, labels);
 			addLabelsContainer.style.display = "none";
@@ -825,7 +773,7 @@ function buildAddLabels(settingsContainer, dimmer) {
 			setTimeout(settingWindow("block"), 1000);
 		}
 	}
-	var closeBtn = createButton("close");
+	closeBtn = createButton("close");
 	closeBtn.onclick = function() { 
 		addLabelsContainer.style.display = "none";
 		addLabelsContainer.remove();
@@ -857,18 +805,18 @@ function insertLegend(elID){
 }
 
 function createLegends(){
-	var legendsDiv=document.createElement("div");
-	legendsDiv.id="legendsDiv";
-	legendsDiv.style.float="right";
-	legendsDiv.innerHTML="<b>Legend:</b>&nbsp;&nbsp;&nbsp;&nbsp;";
-	if(typeof(_RESULT)=="undefined")initialSettings();
-	if(typeof(initSettings)=="undefined" || initSettings.length < 0) return legendsDiv;
+	var legendsDiv = createDiv();
+	legendsDiv.id = "legendsDiv";
+	legendsDiv.style.float = "right";
+	legendsDiv.innerHTML = "<b>Legend:</b>&nbsp;&nbsp;&nbsp;&nbsp;";
+	if(typeof(_RESULT) == "undefined")initialSettings();
+	if(typeof(initSettings) == "undefined" || initSettings.length < 0) return legendsDiv;
 	for(var i=0 ; i<initSettings.rules.length ; i++) {
 		var caption = initSettings.rules[i].caption.replace(initSettings.rules[i].variable, initSettings.rules[i].value);
 		if(initSettings.rules[i].editMode == 1 || initSettings.rules[i].editMode == 4) {
-			legendsDiv.innerHTML+="<span style=\"border-radius:3px;padding:4px;display:inline-block;background:"+initSettings.rules[i].color+";\">"+ caption + " " + initSettings.rules[i].value + "</span>&nbsp;&nbsp;";
+			legendsDiv.innerHTML += "<span style=\"border-radius:3px;padding:4px;display:inline-block;background:" +initSettings.rules[i].color + ";\">" + caption + " " + initSettings.rules[i].value + "</span>&nbsp;&nbsp;";
 		} else {
-			legendsDiv.innerHTML+="<span style=\"border-radius:3px;padding:4px;display:inline-block;background:"+initSettings.rules[i].color+";\">"+ caption +"</span>&nbsp;&nbsp;";
+			legendsDiv.innerHTML += "<span style=\"border-radius:3px;padding:4px;display:inline-block;background:" +initSettings.rules[i].color + ";\">" + caption + "</span>&nbsp;&nbsp;";
 		}
 	}
 	return legendsDiv;
@@ -877,14 +825,12 @@ function createLegends(){
 //timer
 function startSLATimerProcess() {
 	initSettings = buildInitSettings();
-	var sla=setInterval(getAllCaseStats,1000);
-	//getAllCaseStats();
+	var slas = setInterval(getAllCaseStats,1000);
 	refreshRate(JSON.parse(_RESULT).settings.refreshRate);
 }
 
 function alterName(name) {
-	var cw = name;
-	var tempCaseOwner;
+	var cw = name, tempCaseOwner;
 	if(name.indexOf(", ")>0) {
 		tempCaseOwner = name.split(", ");
 		cw = tempCaseOwner[1] + " " + tempCaseOwner[0];
@@ -893,76 +839,62 @@ function alterName(name) {
 }
 
 function getAllTabs() { //get all open tabs on Salesforce
-	var navTab=top.document.getElementById("navigatortab");
-	if(typeof(navTab)=="undefined" || navTab==null) return [];
-	var caseTabWrapper=navTab.children[0];
-	var caseTabs=caseTabWrapper.getElementsByClassName("tabText");
-	var cases=[];
-	for(var i=0;i<caseTabs.length;i++){
-		cases.push(caseTabs[i]);
-	}
+	var navTab,caseTabWrapper,caseTabs,cases=[];
+
+	navTab = top.document.getElementById("navigatortab");
+	if(typeof(navTab) == "undefined" || navTab == null) return [];
+	caseTabWrapper = navTab.children[0];
+	caseTabs = caseTabWrapper.getElementsByClassName("tabText");
+	for(var i=0; i<caseTabs.length; i++) cases.push(caseTabs[i]); 
+	
 	return cases;
 }
 
 function getAllCaseStats() {
-	var caseTabs = getAllTabs();
-	var caseNos=document.getElementsByClassName("x-grid3-col-CASES_CASE_NUMBER");
-	var slas=document.getElementsByClassName("x-grid3-col-00NC0000005BOuj");
-	var caseColor = "FFFFFF";
-	firstCase = document.getElementsByClassName("x-grid3-row-first");
-	rules = JSON.parse(_RESULT).rules;
-	tier = document.getElementById(params.fcf+"_listSelect").selectedOptions[0].innerText;
-	if(tier=="Online Support Tier 1") {
+	var caseTabs,caseNos,slas,caseColor,firstCase;
+
+	slas		= document.getElementsByClassName("x-grid3-col-00NC0000005BOuj");
+	tier 		= document.getElementById(params.fcf+"_listSelect").selectedOptions[0].innerText;
+	rules 		= JSON.parse(_RESULT).rules;
+	caseNos		= document.getElementsByClassName("x-grid3-col-CASES_CASE_NUMBER");
+	caseTabs 	= getAllTabs();
+	caseColor 	= "FFFFFF";
+	firstCase 	= document.getElementsByClassName("x-grid3-row-first");
+	if(tier == "Online Support Tier 1")
 		caseOwner = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-00NC0000005C8Sw");
-	}else if(tier=="Online Support Tier 2") {
+	else if(tier == "Online Support Tier 2")
 		caseOwner = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-00NC0000005C8Sx");
-	}else if(tier=="Online Support Tier 3") {
+	else if(tier == "Online Support Tier 3")
 		caseOwner = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-OWNER_NAME");
-	}
-	//get list of cases on the queue and assign colors
-	if(firstCase.length>0){
+
+	if(firstCase.length > 0){ 	//get list of cases on the queue and assign colors
 		if(document.getElementsByClassName("dgmm").length>0){ console.log("do nothing");}
 		else{		
 			for(var i=0 ; i<datePerCase.length ; i++) {
-				datePerCase[i].parentElement.parentElement.style.background="white";
+				datePerCase[i].parentElement.parentElement.style.background = "white";
 				datePerCase[i].parentElement.parentElement.removeAttribute("colors");
-				tmpColor="";
+				tmpColor = "";
 				for(var itr=0 ; itr<rules.length ; itr++) {
 					var rule = rules[itr].rule;
 					if(rules[itr].editMode) {
 						rule = rules[itr].rule;
-						for(var j=0 ; j<5 ; j++) {
-							rule = rule.replace(rules[itr].variable, rules[itr].value);
-						}
+						for(var j=0 ; j<5 ; j++) rule = rule.replace(rules[itr].variable, rules[itr].value);
 					}
 					
-					if(rules[itr].caption == "Assigned Cases") {
-						assignedColor = rules[itr].color;
-					}
+					if(rules[itr].caption == "Assigned Cases") assignedColor = rules[itr].color;
 					
-					for(var vars=0 ; vars<definedVariables.length ; vars++) {
-						rule = rule.replace(definedVariables[vars].variable, definedVariables[vars].value);
-					}
+					for(var vars=0 ; vars<definedVariables.length ; vars++) rule = rule.replace(definedVariables[vars].variable, definedVariables[vars].value);
 					try{
 						if(eval(rule) && datePerCase[i]) {
-							if(itr>=0 && itr<5) {
-								tmpColor = rules[itr].color;
-							} else {
-								getClrPrElem(datePerCase[i].parentElement.parentElement, rules[itr].color);
-							}
+							if(itr >= 0 && itr < 5)	tmpColor = rules[itr].color;
+							else getClrPrElem(datePerCase[i].parentElement.parentElement, rules[itr].color);
 						}
-						if(itr==rules.length-1 && tmpColor!="") {
-							getClrPrElem(datePerCase[i].parentElement.parentElement, tmpColor);
-						}
-					}catch(e){
-						//console.log(rule)
-					}
+						if(itr == rules.length-1 && tmpColor != "")	getClrPrElem(datePerCase[i].parentElement.parentElement, tmpColor);
+					}catch(e){}
 				}
-				if(window.top.document.getElementById('userNavLabel').textContent.match( alterName(caseOwner[i].innerText) )){
-					if(getSLA_NOW(slas[i].innerText)< 60) {
+				if(window.top.document.getElementById('userNavLabel').textContent.match( alterName(caseOwner[i].innerText) ))
+					if(getSLA_NOW(slas[i].innerText) < 60) 
 						getClrPrElem(datePerCase[i].parentElement.parentElement, assignedColor);
-					}
-				}
 				
 				//let it blink
 				if(datePerCase[i].parentElement.parentElement.getAttribute("colors")) {
@@ -974,26 +906,23 @@ function getAllCaseStats() {
 		}
 	}
 	//get all case tabs
-	if(caseTabs.length>0) {
+	if(caseTabs.length  >0) {
 		for(var j=0 ; j<caseTabs.length ; j++) {
-			caseTabs[j].parentElement.parentElement.parentElement.parentElement.style.background="white";
+			caseTabs[j].parentElement.parentElement.parentElement.parentElement.style.background = "white";
 			caseTabs[j].parentElement.parentElement.parentElement.parentElement.removeAttribute("colors");
+			tmpColor="";
 			for(var i=0 ; i<caseNos.length ; i++) {
-				if(caseTabs[j].innerText.split(" ")[1]==caseNos[i].innerText){
-					if(getSLA_NOW(slas[i].innerText)<0)
-						caseTabs[j].innerText="Case: " + caseNos[i].innerText + " : Exceeded.";
-					else
+				if(caseTabs[j].innerText.split(" ")[1] == caseNos[i].innerText){
+					if(getSLA_NOW(slas[i].innerText)<0)	
+						caseTabs[j].innerText = "Case: " + caseNos[i].innerText + " : Exceeded.";
+					else 
 						caseTabs[j].innerText="Case: " + caseNos[i].innerText + " : " + getSLA_NOW(slas[i].innerText) + " minutes left.";
 					for(var itr=0 ; itr<rules.length ; itr++) {
 						var rule = rules[itr].rule;
 						for(var vars=0 ; vars<definedVariables.length ; vars++) {
 							rule = rule.replace(definedVariables[vars].variable, definedVariables[vars].value);
 							rule = rule.replace(rules[itr].variable, rules[itr].value);
-						}/*
-						if(eval(rule) && caseTabs[j]) {
-							caseTabs[j].parentElement.parentElement.parentElement.parentElement.style.background=rules[itr].color;
-						}*/
-						
+						}
 						//blink the case tabs
 						try{
 							if(eval(rule) && caseTabs[j]) {
@@ -1003,15 +932,13 @@ function getAllCaseStats() {
 									getClrPrElem(caseTabs[j].parentElement.parentElement.parentElement.parentElement, rules[itr].color);
 								}
 							}
-							if(itr==rules.length-1 && tmpColor!="") {
+							if(itr == rules.length-1 && tmpColor != "") {
 								getClrPrElem(caseTabs[j].parentElement.parentElement.parentElement.parentElement, tmpColor);
 							}
-						}catch(e){
-							//console.log(rule)
-						}
+						}catch(e){}
 					}
 					if(window.top.document.getElementById('userNavLabel').textContent.match( alterName(caseOwner[i].innerText) )){
-						if(getSLA_NOW(slas[i].innerText)< 60) {
+						if(getSLA_NOW(slas[i].innerText) < 60) {
 							getClrPrElem(caseTabs[j].parentElement.parentElement.parentElement.parentElement, assignedColor);
 						}
 					}
@@ -1029,17 +956,18 @@ function getAllCaseStats() {
 }
 
 function getSLA_NOW(CASE_SLA){
-	if(typeof(CASE_SLA)=="undefined" || CASE_SLA == null) return "";
-	var NOW = new Date();
-	var SLA = new Date(CASE_SLA);
-	if(NOW.getMonth()%4==0)
-		daysInAMonth[1]=29;
-	var monthDiff = SLA.getMonth()==NOW.getMonth() ? 0 : daysInAMonth[NOW.getMonth()];
-	var days_remaining=SLA.getMonth()==NOW.getMonth() ? SLA.getDate()-NOW.getDate() : NOW > SLA ? SLA.getDate()-(monthDiff+NOW.getDate()) : Math.abs((SLA.getDate()+monthDiff)-NOW.getDate());
-	var hours_remaining=(SLA.getHours() - NOW.getHours());
-	var minutes_remaining=(SLA.getMinutes() - NOW.getMinutes());
-	var hours_remaining=hours_remaining+(days_remaining*24);
-	var total_result=(hours_remaining*60)+minutes_remaining;
+	if(typeof(CASE_SLA) == "undefined" || CASE_SLA == null) return "";
+	var NOW,SLA,monthDiff,days_remaining,hours_remaining,minutes_remaining,hours_remaining,total_result;
+	
+	NOW = new Date();
+	SLA = new Date(CASE_SLA);
+	if(NOW.getMonth()%4 == 0) daysInAMonth[1] = 29;
+	monthDiff 			= SLA.getMonth() == NOW.getMonth() ? 0 : daysInAMonth[NOW.getMonth()];
+	days_remaining		= SLA.getMonth() == NOW.getMonth() ? SLA.getDate() - NOW.getDate() : NOW > SLA ? SLA.getDate()-(monthDiff+NOW.getDate()) : Math.abs((SLA.getDate() + monthDiff) - NOW.getDate());
+	hours_remaining		= (SLA.getHours() - NOW.getHours());
+	minutes_remaining	= (SLA.getMinutes() - NOW.getMinutes());
+	hours_remaining		= hours_remaining + (days_remaining * 24);
+	total_result		= (hours_remaining * 60) + minutes_remaining;
 	return total_result;
 }
 
@@ -1049,27 +977,22 @@ function blinkDiv(elem, colors) {
 	elem.style.background=colors[itr];
 }
 
-function getCurrentSeconds() {
-	return  new Date().getSeconds();
-}
+function getCurrentSeconds() { return  new Date().getSeconds();}
 
 function getClrPrElem(elem, color) {
 	try {
-		var attr;
-		var clrs = [];
-		var result = "";
-		//check if color already existed
+		var attr, clrs = [], result = "";
 		if(elem.getAttribute("colors")!=null) {
 			attr = elem.getAttribute("colors");
 			clrs = attr.split(",");
 		}
-		if(color!="" || typeof(color)!="undefined" || color!=null) {
-			if(clrs.indexOf(color)==-1)
+		if(color != "" || typeof(color) != "undefined" || color != null) {
+			if(clrs.indexOf(color) == -1)
 				clrs.push(color);
 			for(var itr=0 ; itr<clrs.length ; itr++) {
-				if(clrs[itr]!="") {
+				if(clrs[itr] != "") {
 					result += clrs[itr];
-					if(typeof(clrs[itr+1])!="undefined") {
+					if(typeof(clrs[itr+1]) != "undefined") {
 						result += ",";
 					}
 				}
@@ -1079,19 +1002,20 @@ function getClrPrElem(elem, color) {
 	}catch(e) {}
 }
 
-//reminder
-function reminder(){
-	var inputButtons = document.getElementsByTagName("input");
-	for(var itr in inputButtons){
-		if(inputButtons[itr].value=="Save"){
-			inputButtons[itr].onclick = addReminder;
-		}
-	}
+function reminder(){ //reminder
+	var inputButtons,reminderDiv,reminderLoc;
+	
 	try {
-	var reminderDiv = document.createElement("div");
-	var reminderLoc = document.querySelectorAll("div[id^=j_id0][id*=j_id100] .pbSubsection")[0]
-	reminderDiv.innerText = "REMINDER:\n\n1.) Agency, Publisher, Advertiser, Campaign, and Primary Owner is set properly\n2.) Product Category should be related to the issue (Please change if it is not)\n3.) Case description should be summarized\n4.) UFFA SHOULD ALWAYS be filled out\n5.) Case reason should be related as much as possible don't use others\n6.) If there is an existing SR please indicate it as well\n7.) If you inserted a custom script please make sure to indicate this on the Custom script field on the bottom of the page.\n"
-	reminderLoc.insertBefore(reminderDiv, reminderLoc.firstChild);
+		inputButtons = document.getElementsByTagName("input");
+		for(var itr in inputButtons){
+			if(inputButtons[itr].value == "Save"){
+				inputButtons[itr].onclick = addReminder;
+			}
+		}
+		reminderDiv = createDiv();
+		reminderLoc = document.querySelectorAll("div[id^=j_id0][id*=j_id100] .pbSubsection")[0]
+		reminderDiv.innerText = "REMINDER:\n\n1.) Agency, Publisher, Advertiser, Campaign, and Primary Owner is set properly\n2.) Product Category should be related to the issue (Please change if it is not)\n3.) Case description should be summarized\n4.) UFFA SHOULD ALWAYS be filled out\n5.) Case reason should be related as much as possible don't use others\n6.) If there is an existing SR please indicate it as well\n7.) If you inserted a custom script please make sure to indicate this on the Custom script field on the bottom of the page.\n"
+		reminderLoc.insertBefore(reminderDiv, reminderLoc.firstChild);
 	} catch(e){}
 }
 
@@ -1100,43 +1024,44 @@ function addReminder() {
 	if (UFFAField.value.length < 10) {
 		alert("Please fill out the UFFA field for this case");
 		return false;
-	} else {
-		return true;
-	}
+	} else return true;
 }
 
 //popup
 function sf_popup(title, contents) {
 	if(document.getElementById("popupDimmer"))document.getElementById("popupDimmer").remove();
 	if(document.getElementById("popupContainer"))document.getElementById("popupContainer").remove();
-	var dimmer = document.createElement("div");
-	dimmer.id = "popupDimmer";
-	dimmer.style.position = "fixed";
-	dimmer.style.zIndex = "9999";
-	dimmer.style.display = "block";
-	dimmer.style.height = "1500px";
-	dimmer.style.width = "1500px";
-	dimmer.style.opacity = "0.5";
+	var dimmer,popupContainer,closeButton,bottomContainer,topContainer,contentsContainer;
+	
+	dimmer 					= createDiv();
+	dimmer.id 				= "popupDimmer";
+	dimmer.style.top 		= "0px";
+	dimmer.style.width 		= "1500px";
+	dimmer.style.height 	= "1500px";
+	dimmer.style.zIndex 	= "9999";
+	dimmer.style.display 	= "block";
+	dimmer.style.opacity 	= "0.5";
+	dimmer.style.position 	= "fixed";
 	dimmer.style.background = "black";
-	dimmer.style.top = "0px";
 	document.body.appendChild(dimmer);
-	var popupContainer = document.createElement("div");
-	popupContainer.setAttribute("style", "Position:absolute");
-	popupContainer.id = "popupContainer";
-	popupContainer.style.display = "block";
-	popupContainer.style.zIndex = "10000";
-	popupContainer.style.height = "auto";
-	popupContainer.style.width = "400px";
-	popupContainer.style.zIndex="99999";
-	popupContainer.style.textAlign = "center";
+	
+	popupContainer 					= createDiv();
+	popupContainer.id 				= "popupContainer";
+	popupContainer.style.top 		= "0px";
+	popupContainer.style.left 		= String((window.innerWidth/2)-200)+"px";
+	popupContainer.style.width 		= "400px";
+	popupContainer.style.height 	= "auto";
+	popupContainer.style.zIndex 	= "10000";
+	popupContainer.style.zIndex		= "99999";
+	popupContainer.style.margin 	= "20px 10px 20px 10px";
+	popupContainer.style.outline 	= "2px solid rgb(183,199,207)";
+	popupContainer.style.display 	= "block";
+	popupContainer.style.textAlign 	= "center";
 	popupContainer.style.background = "rgb(248,248,248)";
-	popupContainer.style.margin = "20px 10px 20px 10px";
-	popupContainer.style.outline = "2px solid rgb(183,199,207)";
-	popupContainer.style.top = "0px";
-	popupContainer.style.left = String((window.innerWidth/2)-200)+"px";
+	popupContainer.style.position 	= "absolute";
 	document.body.appendChild(popupContainer);
 	
-	var closeButton = createButton("close");
+	closeButton = createButton("close");
 	closeButton.onclick = function() { 
 		popupContainer.style.display = "none";
 		dimmer.style.display = "none";
@@ -1144,29 +1069,29 @@ function sf_popup(title, contents) {
 		dimmer.remove();
 	}
 	
-	var bottomContainer = document.createElement("div");
-	bottomContainer.style.position = "absolute";
-	bottomContainer.style.right = "0";
-	bottomContainer.style.bottom = "0";
-	bottomContainer.style.marginBottom = "7px";	
+	bottomContainer 					= createDiv();
+	bottomContainer.style.right 		= "0";
+	bottomContainer.style.bottom 		= "0";
+	bottomContainer.style.position 		= "absolute";
+	bottomContainer.style.marginBottom 	= "7px";	
 	
-	var topContainer = document.createElement("div");
-	topContainer.style.position = "absolute";
-	topContainer.style.top = "0";
-	topContainer.style.left = "0";
-	topContainer.style.padding = "5px 0px";
+	topContainer 					= createDiv();
+	topContainer.innerHTML 			= title;//"<h1>Reminder</h1>";
+	topContainer.style.top 			= "0";
+	topContainer.style.left 		= "0";
+	topContainer.style.width 		= "100%"
+	topContainer.style.color 		= "rgb(68,68,68)";
+	topContainer.style.padding 		= "5px 0px";
+	topContainer.style.position 	= "absolute";
+	topContainer.style.fontWeight 	= "bold";
+	topContainer.style.background 	= "rgb(230,241,246)";
 	topContainer.style.marginBottom = "7px";
-	topContainer.style.background = "rgb(230,241,246)";
 	topContainer.style.borderBottom = "1px solid rgb(183,199,207)";
-	topContainer.style.color = "rgb(68,68,68)";
-	topContainer.style.fontWeight = "bold";
-	topContainer.innerHTML = title;//"<h1>Reminder</h1>";
-	topContainer.style.width = "100%"
 	
-	var contentsContainer = document.createElement("div");
-	contentsContainer.style.padding = "30px 10px 30px 10px";
-	contentsContainer.style.background = "rgb(243,243,247)";
-	contentsContainer.innerHTML = contents;
+	contentsContainer 					= createDiv();
+	contentsContainer.innerHTML 		= contents;
+	contentsContainer.style.padding 	= "30px 10px 30px 10px";
+	contentsContainer.style.background 	= "rgb(243,243,247)";
 
 	bottomContainer.appendChild(closeButton);
 	popupContainer.appendChild(topContainer);
