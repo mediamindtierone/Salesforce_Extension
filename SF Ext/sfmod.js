@@ -250,19 +250,20 @@ function getOwner(vals) {
 }
 
 function errorHandler(e) { //file handling starts here
-	msg = '';
+	msg = "";
 	switch (e.code) {
-		case FileError.QUOTA_EXCEEDED_ERR			: msg = 'QUOTA_EXCEEDED_ERR'; break;
-		case FileError.SECURITY_ERR					: msg = 'SECURITY_ERR'; break;
-		case FileError.INVALID_MODIFICATION_ERR		: msg = 'INVALID_MODIFICATION_ERR'; break;
-		case FileError.INVALID_STATE_ERR			: msg = 'INVALID_STATE_ERR'; break;
-		case FileError.NOT_FOUND_ERR				: msg = 'NOT_FOUND_ERR';
-		default										: msg = 'Unknown Error'; break;
+		case FileError.QUOTA_EXCEEDED_ERR			: msg = "QUOTA_EXCEEDED_ERR"; break;
+		case FileError.SECURITY_ERR					: msg = "SECURITY_ERR"; break;
+		case FileError.INVALID_MODIFICATION_ERR		: msg = "INVALID_MODIFICATION_ERR"; break;
+		case FileError.INVALID_STATE_ERR			: msg = "INVALID_STATE_ERR"; break;
+		case FileError.NOT_FOUND_ERR				: msg = "NOT_FOUND_ERR";
 			if(typeof(initSettings)!="undefined") //if save will fail, this will try it again
 				sf_write(JSON.stringify(initSettings), true, labels);
 			break;
+		default										: msg = "Unknown Error"; break;
 	};
-	console.log('Error: ' + msg);	
+	
+	console.log("Error: " + msg);
 }
 
 function _CREATEFILE(filename) {
@@ -330,14 +331,16 @@ function initiateFileSystem() {
 	window.requestFileSystem(persistenceType, fileSize, function(filesystem) { fs = filesystem; }, errorHandler);
 }
 
-function sf_create(filename) {_CREATEFILE(filename);}
-function sf_delete(filename) { setTimeout(_DELETEFILE(filename), 2000); }
+function sf_create(filename) { _CREATEFILE(filename); }
+function sf_delete(filename) { _DELETEFILE(filename); }
 function sf_write(val, willreplace, filename) {
 	try {
 		if(willreplace) {
-			setTimeout(sf_delete(filename),1000);
-			setTimeout(sf_create(filename), 1000);
-			setTimeout(_WRITETOFILE(val, filename),2000);
+			sf_delete(filename);
+			sf_create(filename);
+			setTimeout(function(){
+				_WRITETOFILE(val, filename);
+			},2000);
 		} else {
 			if(typeof(_RESULT) == "undefined") setTimeout(_WRITETOFILE(val, filename),2000);
 		}
@@ -647,8 +650,8 @@ function buildAddLabels(settingsContainer, dimmer) {
 	captionText 				= createInput();
 	captionText.type 			= "text";
 	captionText.name 			= "caption";
-	captionHolder.appendChild(captionText);
 	captionHolder.appendChild(captionLabel);
+	captionHolder.appendChild(captionText);
 	
 	colorHolder 				= createDiv();
 	colorHolder.style.display 	= "table";
@@ -825,6 +828,7 @@ function createLegends(){
 //timer
 function startSLATimerProcess() {
 	initSettings = buildInitSettings();
+	insertLegend(params.fcf+"_rolodex");
 	var slas = setInterval(getAllCaseStats,1000);
 	refreshRate(JSON.parse(_RESULT).settings.refreshRate);
 }
