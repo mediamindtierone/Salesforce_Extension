@@ -17,7 +17,8 @@
 	- create cookies to all handling cases / per browser session maybe
 	- if current reply has Tier2 or Tier3 word in it, flag it. 
 [X]new comment - public box is not checked automatically.
-[X] fixed the Time Remaining Left inconsistency
+[X]fixed the Time Remaining Left inconsistency
 	- made it available only on single case view
 [ ]hide the interaction monitor
 [X]if case title is from "Lead from Website" popup a message
+[ ]make it like a custom script use our custom server
