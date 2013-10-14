@@ -239,8 +239,7 @@ function getOwner(vals) {
 		if (vals[w] != undefined && vals[w] != "Online Support Tier 1" && vals[w].length > 1) {
 			cnt = 0;
 			for (var g=0; g<ownerName.length ; g++) {
-				if (ownerName[g].textContent.match(vals[w]))			
-					cnt++;
+				if (ownerName[g].textContent.match(vals[w])) cnt++;
 			}
 			tempStr += String("\n"+vals[w]+": "+cnt + "<br>")
 			cnt=0;
@@ -361,8 +360,7 @@ function sf_append(val, filename) {
 		for(var x2=0 ; x2<itr ; x2++) { initSettings.rules.splice(initSettings.rules.length-1, 1); }
 		initSettings.rules.push(val);
 		for(var x3=itr-1 ; x3>-1 ; x3--) { initSettings.rules.push(temp[x3]); }
-	} catch(e) { console.log("Error: sf_append : contact windhel"); } 
-	//finally {	sf_write(JSON.stringify(initSettings), true, labels);	}
+	} catch(e) { console.log("Error: sf_append : contact windhel"); }
 }
 
 function sf_read(filename) {
@@ -395,8 +393,8 @@ function initialSettings() {
 	initSettings = sfExtension;
 	sf_write(JSON.stringify(sfExtension), false, labels);
 }
-//plugin settings
-function buildInitSettings() {
+
+function buildInitSettings() { //plugin settings
 	setTimeout(
 		function() {
 			if(typeof(_RESULT)=="undefined" || _RESULT == "undefined" || _RESULT == "")	initialSettings(); 
@@ -433,6 +431,7 @@ function settingWindow(e) {
 	
 	var captionHolder = [],valueHolder = [],textColor = [],rule = [],deleteRule = [];
 	
+	resetStat				= 0;
 	dimmer 					= createDiv();
 	dimmer.id 				= "settingsDimmer";
 	dimmer.style.top 		= "0px";
@@ -793,13 +792,11 @@ function buildAddLabels(settingsContainer, dimmer) {
 	return addLabelsContainer;
 }
 
-//legend 
-function insertLegend(elID){
+function insertLegend(elID){ //legend 
 	if(document.getElementById("legendsDiv"))document.getElementById("legendsDiv").remove();
-	var el=document.getElementById(elID);
-
+	var el = document.getElementById(elID);
 	initSettings = JSON.parse(_RESULT);
-	if((el == null || typeof(el)=="undefined") && params.fcf) {
+	if((el == null || typeof(el) == "undefined") && params.fcf) {
 		setTimeout(insertLegend(params.fcf+"_rolodex"), 5000);
 	} else {
 		var legends=createLegends();
@@ -825,8 +822,7 @@ function createLegends(){
 	return legendsDiv;
 }
 
-//timer
-function startSLATimerProcess() {
+function startSLATimerProcess() { //timer
 	initSettings = buildInitSettings();
 	insertLegend(params.fcf+"_rolodex");
 	var slas = setInterval(getAllCaseStats,1000);
@@ -909,8 +905,8 @@ function getAllCaseStats() {
 			}	
 		}
 	}
-	//get all case tabs
-	if(caseTabs.length  >0) {
+	
+	if(caseTabs.length  >0) { //get all case tabs
 		for(var j=0 ; j<caseTabs.length ; j++) {
 			caseTabs[j].parentElement.parentElement.parentElement.parentElement.style.background = "white";
 			caseTabs[j].parentElement.parentElement.parentElement.parentElement.removeAttribute("colors");
@@ -927,8 +923,7 @@ function getAllCaseStats() {
 							rule = rule.replace(definedVariables[vars].variable, definedVariables[vars].value);
 							rule = rule.replace(rules[itr].variable, rules[itr].value);
 						}
-						//blink the case tabs
-						try{
+						try{ //blink the case tabs
 							if(eval(rule) && caseTabs[j]) {
 								if(itr>=0 && itr<5) {
 									tmpColor = rules[itr].color;
@@ -947,7 +942,6 @@ function getAllCaseStats() {
 						}
 					}
 					
-					//let it blink
 					if(caseTabs[j].parentElement.parentElement.parentElement.parentElement.getAttribute("colors")) {
 						var elemx = caseTabs[j].parentElement.parentElement.parentElement.parentElement;
 						var colorsx = caseTabs[j].parentElement.parentElement.parentElement.parentElement.getAttribute("colors").split(",");
@@ -1031,8 +1025,7 @@ function addReminder() {
 	} else return true;
 }
 
-//popup
-function sf_popup(title, contents) {
+function sf_popup(title, contents) { //popup
 	if(document.getElementById("popupDimmer"))document.getElementById("popupDimmer").remove();
 	if(document.getElementById("popupContainer"))document.getElementById("popupContainer").remove();
 	var dimmer,popupContainer,closeButton,bottomContainer,topContainer,contentsContainer;
