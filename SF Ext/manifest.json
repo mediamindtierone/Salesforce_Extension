@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "dg MediaMind Support Extension",
   "description": "This extension is for help with Support usage of SF",
-  "version": "1.0",
+  "version": "2.0",
 
   "permissions": [
     "<all_urls>","webRequest","webRequestBlocking","cookies", "tabs","storage", "unlimitedStorage"
