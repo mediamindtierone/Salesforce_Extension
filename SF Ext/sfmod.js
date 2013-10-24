@@ -30,7 +30,7 @@ var fs 					= null,
 	labels 				= "sfExtension_labels.txt",
 	fileSize 			= 1024*1024,
 	daysInAMonth 		= [31,28,31,30,31,30,31,31,30,31,30,31],
-	persistenceType 	= window.TEMPORARY,
+	persistenceType 	= window.PERSISTENT,
 	regex 				= /[?&]([^=#]+)=([^&#]*)/g, 
 	url 				= window.location.href, 
 	params 				= {}, 
@@ -194,7 +194,7 @@ function statPortion() { //status for agents and engineers
 		optnode.src 		= chrome.runtime.getURL("images/settingIcon.png");
 		optnode.id 			="optionButton";
 		optnode.onclick 	= function() {
-			initSettings = buildInitSettings();
+			buildInitSettings();
 			settingWindow("block");
 		}
 		optnode.style.top 		= "1px";
@@ -379,7 +379,7 @@ function initialSettings() {
 	//planning to have an advanced mode and assigned an editable mode of 2. this would let the user be more flexible on the rules
 	var sfExtension = {
 		settings:{
-			name:"Salesforce Extension", version:"1.0", refreshRate:"60000", assignedCase:"#2c86ff", reserveRules:"3"
+			name:"Salesforce Extension", version:"2.0", refreshRate:"60000", assignedCase:"#2c86ff", reserveRules:"3"
 		},
 		rules:[
 			{caption:"Case exceed in (mins)", rule:"(#CASESLA - #NOW)/60000 < #XX", color:"#FFFF00", editMode:4, variable:"#XX", value:"60"},
@@ -401,7 +401,7 @@ function buildInitSettings() { //plugin settings
 			if(typeof(_RESULT)=="undefined" || _RESULT == "undefined" || _RESULT == "")	initialSettings(); 
 		}
 	, 1000);
-	return JSON.parse(_RESULT);
+	//return JSON.parse(_RESULT);
 }
 
 function createButton(text) {
@@ -824,7 +824,7 @@ function createLegends(){
 }
 
 function startSLATimerProcess() { //timer
-	initSettings = buildInitSettings();
+	buildInitSettings();
 	insertLegend(params.fcf+"_rolodex");
 	var slas = setInterval(getAllCaseStats,1000);
 	refreshRate(JSON.parse(_RESULT).settings.refreshRate);
@@ -1023,7 +1023,11 @@ function addReminder() {
 	if (UFFAField.value.length < 10) {
 		alert("Please fill out the UFFA field for this case");
 		return false;
-	} else return true;
+	} else {
+		if(typeof(document.getElementById(params.fcf+"_refresh"))!="undefined")
+			document.getElementById(params.fcf+"_refresh").click();
+		return true;
+	}
 }
 
 function sf_popup(title, contents) { //popup
