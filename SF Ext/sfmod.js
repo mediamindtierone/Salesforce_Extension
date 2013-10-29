@@ -28,9 +28,9 @@ var fs 					= null,
 							{variable:"#ITERCNT", value:'alterName(iterationCount[i].innerText)'}
 						],
 	labels 				= "sfExtension_labels.txt",
-	fileSize 			= 1024*1024,
+	fileSize 			= (1024*1024)*5,
 	daysInAMonth 		= [31,28,31,30,31,30,31,31,30,31,30,31],
-	persistenceType 	= window.PERSISTENT,
+	persistenceType 	= window.TEMPORARY,
 	regex 				= /[?&]([^=#]+)=([^&#]*)/g, 
 	url 				= window.location.href, 
 	params 				= {}, 
@@ -379,7 +379,7 @@ function initialSettings() {
 	//planning to have an advanced mode and assigned an editable mode of 2. this would let the user be more flexible on the rules
 	var sfExtension = {
 		settings:{
-			name:"Salesforce Extension", version:"2.0", refreshRate:"60000", assignedCase:"#2c86ff", reserveRules:"3"
+			name:"Salesforce Extension", version:"2.0", refreshRate:"60000", assignedCase:"#2c86ff", reserveRules:"4"
 		},
 		rules:[
 			{caption:"Case exceed in (mins)", rule:"(#CASESLA - #NOW)/60000 < #XX", color:"#FFFF00", editMode:4, variable:"#XX", value:"60"},
@@ -388,7 +388,8 @@ function initialSettings() {
 			{caption:"Case Exceeded", rule:"#CASESLA - #NOW < #XX", color:"#CC0000", editMode:2, variable:"#XX", value:"0"},
 			{caption:"Iteration Count >", rule:"#ITERCNT > #XX", color:"#2cefff", editMode:4, variable:"#XX", value:"4"},
 			{caption:"Assigned Cases", rule:"#ME.match(#CASEOWNER)", color:"#2c86ff", editMode:2, variable:"", value:""},
-			{caption:"Smart Trading", rule:"#PRODCAT.match('#XX')", color:"#85ff2c", editMode:2, variable:"#XX", value:"Smart Trading"}
+			{caption:"Smart Trading", rule:"#PRODCAT.match('#XX')", color:"#85ff2c", editMode:2, variable:"#XX", value:"Smart Trading"},
+			{caption:"API", rule:"#PRODCAT.match('#XX')", color:"#2ffda6", editMode:2, variable:"#XX", value:"API"}
 		]
 	};
 	initSettings = sfExtension;
@@ -753,18 +754,19 @@ function buildAddLabels(settingsContainer, dimmer) {
 		if((typeof(captionText.value) == "undefined" || captionText.value == ""))alert("Account is required.");
 		else {
 			var val 	= {};
-			val.color 	= colorText.value;
 			val.caption = captionText.value;
 			if(checkAdvance.checked && dynaAdvance.checked){
 				val.rule 		= rulesText.value;
+				val.color 		= colorText.value;
 				val.value 		= valueText.value;
 				val.editMode 	= 1;
 				val.variable 	= varText.value;
 			}else{
 				val.rule 		= "#ACCOUNT.toLowerCase().match('#XX'.toLowerCase()) || #PUBNAME.toLowerCase().match('#XX'.toLowerCase())";
-				val.value 		= captionText.value;
+				val.color 		= colorText.value;
 				val.editMode 	= 3;
 				val.variable 	= "#XX";
+				val.value 		= captionText.value;
 			}
 			sf_append(val, labels);
 			addLabelsContainer.style.display = "none";
