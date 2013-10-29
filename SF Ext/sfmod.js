@@ -1,5 +1,4 @@
 /*
-	
 	This plugin is using file handling for HTML5, please see URL: http://www.html5rocks.com/en/tutorials/file/filesystem/#toc-introduction
 */
 
@@ -28,7 +27,7 @@ var fs 					= null,
 							{variable:"#ITERCNT", value:'alterName(iterationCount[i].innerText)'}
 						],
 	labels 				= "sfExtension_labels.txt",
-	fileSize 			= 1024*1024,
+	fileSize 			= (1024*1024)*5,
 	daysInAMonth 		= [31,28,31,30,31,30,31,31,30,31,30,31],
 	persistenceType 	= window.TEMPORARY,
 	regex 				= /[?&]([^=#]+)=([^&#]*)/g, 
@@ -194,7 +193,7 @@ function statPortion() { //status for agents and engineers
 		optnode.src 		= chrome.runtime.getURL("images/settingIcon.png");
 		optnode.id 			="optionButton";
 		optnode.onclick 	= function() {
-			initSettings = buildInitSettings();
+			buildInitSettings();
 			settingWindow("block");
 		}
 		optnode.style.top 		= "1px";
@@ -379,7 +378,7 @@ function initialSettings() {
 	//planning to have an advanced mode and assigned an editable mode of 2. this would let the user be more flexible on the rules
 	var sfExtension = {
 		settings:{
-			name:"Salesforce Extension", version:"1.0", refreshRate:"60000", assignedCase:"#2c86ff", reserveRules:"3"
+			name:"Salesforce Extension", version:"2.0", refreshRate:"60000", assignedCase:"#2c86ff", reserveRules:"4"
 		},
 		rules:[
 			{caption:"Case exceed in (mins)", rule:"(#CASESLA - #NOW)/60000 < #XX", color:"#FFFF00", editMode:4, variable:"#XX", value:"60"},
@@ -388,7 +387,8 @@ function initialSettings() {
 			{caption:"Case Exceeded", rule:"#CASESLA - #NOW < #XX", color:"#CC0000", editMode:2, variable:"#XX", value:"0"},
 			{caption:"Iteration Count >", rule:"#ITERCNT > #XX", color:"#2cefff", editMode:4, variable:"#XX", value:"4"},
 			{caption:"Assigned Cases", rule:"#ME.match(#CASEOWNER)", color:"#2c86ff", editMode:2, variable:"", value:""},
-			{caption:"Smart Trading", rule:"#PRODCAT.match('#XX')", color:"#85ff2c", editMode:2, variable:"#XX", value:"Smart Trading"}
+			{caption:"Smart Trading", rule:"#PRODCAT.match('#XX')", color:"#85ff2c", editMode:2, variable:"#XX", value:"Smart Trading"},
+			{caption:"API", rule:"#PRODCAT.match('#XX')", color:"#2ffda6", editMode:2, variable:"#XX", value:"API"}
 		]
 	};
 	initSettings = sfExtension;
@@ -401,7 +401,7 @@ function buildInitSettings() { //plugin settings
 			if(typeof(_RESULT)=="undefined" || _RESULT == "undefined" || _RESULT == "")	initialSettings(); 
 		}
 	, 1000);
-	return JSON.parse(_RESULT);
+	//return JSON.parse(_RESULT);
 }
 
 function createButton(text) {
@@ -753,18 +753,19 @@ function buildAddLabels(settingsContainer, dimmer) {
 		if((typeof(captionText.value) == "undefined" || captionText.value == ""))alert("Account is required.");
 		else {
 			var val 	= {};
-			val.color 	= colorText.value;
 			val.caption = captionText.value;
 			if(checkAdvance.checked && dynaAdvance.checked){
 				val.rule 		= rulesText.value;
+				val.color 		= colorText.value;
 				val.value 		= valueText.value;
 				val.editMode 	= 1;
 				val.variable 	= varText.value;
 			}else{
 				val.rule 		= "#ACCOUNT.toLowerCase().match('#XX'.toLowerCase()) || #PUBNAME.toLowerCase().match('#XX'.toLowerCase())";
-				val.value 		= captionText.value;
+				val.color 		= colorText.value;
 				val.editMode 	= 3;
 				val.variable 	= "#XX";
+				val.value 		= captionText.value;
 			}
 			sf_append(val, labels);
 			addLabelsContainer.style.display = "none";
@@ -824,7 +825,7 @@ function createLegends(){
 }
 
 function startSLATimerProcess() { //timer
-	initSettings = buildInitSettings();
+	buildInitSettings();
 	insertLegend(params.fcf+"_rolodex");
 	var slas = setInterval(getAllCaseStats,1000);
 	refreshRate(JSON.parse(_RESULT).settings.refreshRate);
@@ -1023,7 +1024,11 @@ function addReminder() {
 	if (UFFAField.value.length < 10) {
 		alert("Please fill out the UFFA field for this case");
 		return false;
-	} else return true;
+	} else {
+		if(typeof(document.getElementById(params.fcf+"_refresh"))!="undefined")
+			document.getElementById(params.fcf+"_refresh").click();
+		return true;
+	}
 }
 
 function sf_popup(title, contents) { //popup
