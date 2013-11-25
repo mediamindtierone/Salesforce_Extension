@@ -19,7 +19,8 @@
 		"images/stat.png",
 		"images/settingIcon.png",
 		"images/dgBack.png",
-		"images/dgLogo.png"
+		"images/dgLogo.png",
+		"sfmod_plugin.js"
   ],
   "browser_action": {
     "default_icon": "icon.png"    
