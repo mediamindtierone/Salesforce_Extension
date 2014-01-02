@@ -88,6 +88,7 @@ if(params.fcf) {
 	var scv = setInterval(singleCaseView, 1000);
 	reminder();
 	lfw_popup(); //popup reminder for Lead for Website
+	boa_iospecial();
 }
 
 function lfw_popup() {
@@ -96,7 +97,17 @@ function lfw_popup() {
 	
 	var lfw_subject = document.getElementById("j_id0:onlinecase:j_id41:j_id52:j_id53").textContent.toLowerCase();
 	if(lfw_subject.match("lead from website"))
-	sf_popup("<h1>Reminder</h1>","Please be reminded that we have to follow the process indicated on this wiki article: <br><b>http://peg/wiki/index.php/lead-from-website-emails/</b><br> before handling this case.");
+		sf_popup("<h1>Reminder</h1>","Please be reminded that we have to follow the process indicated on this wiki article: <br><b>http://peg/wiki/index.php/lead-from-website-emails/</b><br> before handling this case.");
+}
+
+function boa_iospecial() {
+	if(document.getElementById("j_id0:onlinecase:j_id41:j_id52:j_id70") == null || typeof(document.getElementById("j_id0:onlinecase:j_id41:j_id52:j_id70")) == "undefined") return;
+	if(window.location.href.match("CaseDetail") == false) return;
+	
+	var boa = document.getElementById('j_id0:onlinecase:j_id41:j_id52:j_id70').textContent.toLowerCase();
+	var prodCat3 = document.getElementById('j_id0:onlinecase:j_id41:j_id98:j_id101').textContent.toLowerCase();
+	if(boa.match("bank of america") && prodCat3.match("media plan placement enabling / disabling")) 
+		sf_popup("<h1>Reminder</h1>","Please be reminded that there is a special agreement between Mediamind and Bank of America in terms of enabling their placements. If this case refers to such please refer to case number 00161061 and see the attachment. It is an email from Mike Rosner giving light to the details.");
 }
 
 function singleCaseView() {
@@ -405,7 +416,7 @@ function initialSettings() {
 	//planning to have an advanced mode and assigned an editable mode of 2. this would let the user be more flexible on the rules
 	var sfExtension = {
 		settings:{
-			name:"Salesforce Extension", version:"2.0", refreshRate:"60000", assignedCase:"#2c86ff", reserveRules:"4"
+			name:"Salesforce Extension", version:"2.2", refreshRate:"60000", assignedCase:"#2c86ff", reserveRules:"4"
 		},
 		rules:[
 			{caption:"Case exceed in (mins)", rule:"(#CASESLA - #NOW)/60000 < #XX", color:"#FFFF00", editMode:4, variable:"#XX", value:"60"},
@@ -635,8 +646,8 @@ function settingWindow(e) {
 		valueHolder[i] = createInput();
 		if(initSettings.rules[i].editMode==1 || initSettings.rules[i].editMode==4) {
 			valueHolder[i].value = initSettings.rules[i].value;
-			valueHolder[i].id = "valueHolder";
 			valueHolder[i].maxLength = 15;
+			valueHolder[i].type = "number";
 			valueHolder[i].style.display = "inline";
 			valueHolder[i].size = 1;
 			valueHolder[i].setAttribute('valId', i)
