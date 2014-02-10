@@ -419,14 +419,16 @@ function initialSettings() {
 			name:"Salesforce Extension", version:"2.2", refreshRate:"60000", assignedCase:"#2c86ff", reserveRules:"4"
 		},
 		rules:[
-			{caption:"Case exceed in (mins)", rule:"(#CASESLA - #NOW)/60000 < #XX", color:"#FFFF00", editMode:4, variable:"#XX", value:"60"},
-			{caption:"Case exceed in (#XX mins)", rule:"(#CASESLA - #NOW)/60000 < #XX", color:"#FF9700", editMode:2, variable:"#XX", value:"30"},
-			{caption:"Case exceed in (#XX mins)", rule:"(#CASESLA - #NOW)/60000 < #XX", color:"#FF6200", editMode:2, variable:"#XX", value:"15"},
-			{caption:"Case Exceeded", rule:"#CASESLA - #NOW < #XX", color:"#CC0000", editMode:2, variable:"#XX", value:"0"},
-			{caption:"Iteration Count >", rule:"#ITERCNT > #XX", color:"#2cefff", editMode:4, variable:"#XX", value:"4"},
-			{caption:"Assigned Cases", rule:"#ME.match(#CASEOWNER)", color:"#2c86ff", editMode:2, variable:"", value:""},
-			{caption:"Smart Trading", rule:"#PRODCAT.match('#XX')", color:"#85ff2c", editMode:2, variable:"#XX", value:"Smart Trading"},
-			{caption:"API", rule:"#PRODCAT.match('#XX')", color:"#2ffda6", editMode:2, variable:"#XX", value:"API"}
+			{caption:"Case exceed in (mins)", rule:"(#CASESLA - #NOW)/60000 < #XX", color:"#E3C800", editMode:4, variable:"#XX", value:"60"},
+			{caption:"Case exceed in (#XX mins)", rule:"(#CASESLA - #NOW)/60000 < #XX", color:"#F0A30A", editMode:2, variable:"#XX", value:"30"},
+			{caption:"Case exceed in (#XX mins)", rule:"(#CASESLA - #NOW)/60000 < #XX", color:"#FA6800", editMode:2, variable:"#XX", value:"15"},
+			{caption:"Case Exceeded", rule:"#CASESLA - #NOW < #XX", color:"#E51400", editMode:2, variable:"#XX", value:"0"},
+			{caption:"Iteration Count >", rule:"#ITERCNT > #XX", color:"#1BA1E2", editMode:4, variable:"#XX", value:"4"},
+			{caption:"Assigned Cases", rule:"#ME.match(#CASEOWNER)", color:"#0050EF", editMode:2, variable:"", value:""},
+			{caption:"Smart Trading", rule:"#PRODCAT.match('#XX')", color:"#008A00", editMode:2, variable:"#XX", value:"Smart Trading"},
+			{caption:"API", rule:"#PRODCAT.match('#XX')", color:"#60A917", editMode:2, variable:"#XX", value:"API"},
+			{caption:"Reckit Benckiser", rule:"#ACCOUNT.toLowerCase().match('#XX'.toLowerCase()) || #PUBNAME.toLowerCase().match('#XX'.toLowerCase())", color:"#A4C400", editMode:2, variable:"#XX", value:"Reckit Benckiser"}
+			
 		]
 	};
 	initSettings = sfExtension;
