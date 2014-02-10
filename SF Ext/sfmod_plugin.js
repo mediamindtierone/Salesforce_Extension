@@ -416,7 +416,7 @@ function initialSettings() {
 	//planning to have an advanced mode and assigned an editable mode of 2. this would let the user be more flexible on the rules
 	var sfExtension = {
 		settings:{
-			name:"Salesforce Extension", version:"2.2", refreshRate:"60000", assignedCase:"#2c86ff", reserveRules:"4"
+			name:"Salesforce Extension", version:"2.3", refreshRate:"60000", assignedCase:"#2c86ff", reserveRules:"4"
 		},
 		rules:[
 			{caption:"Case exceed in (mins)", rule:"(#CASESLA - #NOW)/60000 < #XX", color:"#E3C800", editMode:4, variable:"#XX", value:"60"},
@@ -427,7 +427,7 @@ function initialSettings() {
 			{caption:"Assigned Cases", rule:"#ME.match(#CASEOWNER)", color:"#0050EF", editMode:2, variable:"", value:""},
 			{caption:"Smart Trading", rule:"#PRODCAT.match('#XX')", color:"#008A00", editMode:2, variable:"#XX", value:"Smart Trading"},
 			{caption:"API", rule:"#PRODCAT.match('#XX')", color:"#60A917", editMode:2, variable:"#XX", value:"API"},
-			{caption:"Reckit Benckiser", rule:"#ACCOUNT.toLowerCase().match('#XX'.toLowerCase()) || #PUBNAME.toLowerCase().match('#XX'.toLowerCase())", color:"#A4C400", editMode:2, variable:"#XX", value:"Reckit Benckiser"}
+			{caption:"Reckit Benckiser", rule:"#ACCOUNT.toLowerCase().match('#XX'.toLowerCase()) || #PUBNAME.toLowerCase().match('#XX'.toLowerCase())", color:"#A4C400", editMode:2, variable:"#XX", value:"Reckitt Benckiser"}
 			
 		]
 	};
