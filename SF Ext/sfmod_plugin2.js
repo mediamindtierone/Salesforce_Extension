@@ -81,7 +81,6 @@ function getUserColumn() {
 	return ownerName;
 }
 
-
 function placeButtons() {
 	if(typeof(document.getElementsByClassName('multiforce')[0])!="undefined") {
 		var ufb = document.getElementsByClassName('multiforce')[0];
