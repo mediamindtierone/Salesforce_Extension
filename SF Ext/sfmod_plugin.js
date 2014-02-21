@@ -1,6 +1,5 @@
 /*
 	This plugin is using file handling for HTML5, please see URL: http://www.html5rocks.com/en/tutorials/file/filesystem/#toc-introduction
-	
 */
 
 var fs 					= null,
@@ -11,21 +10,25 @@ var fs 					= null,
 	sfRefresh,
 	initSettings,
 	ownerName,
-	caseOwner 			= document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-00NC0000005C8Sw"),
-	datePerCase 		= document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-00NC0000005BOuj"),
-	pubNamePerCase 		= document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-00NC0000005C8T4"),
-	iterationCount 		= document.getElementsByClassName("x-grid3-col x-grid3-cell x-grid3-td-00NC0000005C8Tc"),
-	productCategory 	= document.getElementsByClassName("x-grid3-col x-grid3-cell x-grid3-td-00NC0000005C8T2"),
-	accountNamePerCase 	= document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-ACCOUNT_NAME"),
+	caseOwner 			= document.getElementsByClassName("x-grid3-col-00NC0000005C8Sw"),
+	datePerCase 		= document.getElementsByClassName("x-grid3-col-00NC0000005BOuj"),
+	pubNamePerCase 		= document.getElementsByClassName("x-grid3-col-00NC0000005C8T4"),
+	iterationCount 		= document.getElementsByClassName("x-grid3-td-00NC0000005C8Tc"),
+	productCategory 	= document.getElementsByClassName("x-grid3-td-00NC0000005C8T2"),
+	accountNamePerCase 	= document.getElementsByClassName("x-grid3-col-ACCOUNT_NAME"),
+	accountTypePerCase  = document.getElementsByClassName("x-grid3-col-00NC0000005BOuf"),
+	priorityEscalatedCases = document.getElementsByClassName("x-grid3-col-Priority"),
 	definedVariables 	= [
 							{variable:"#NOW", value:"new Date()"},
-							{variable:"#CASESLA", value:"new Date(datePerCase[i].textContent)"},
+							{variable:"#CASESLA", value:"reFormatDate(datePerCase[i].textContent)"},
 							{variable:"#ACCOUNT", value:"accountNamePerCase[i].textContent"},
 							{variable:"#PUBNAME", value:"pubNamePerCase[i].textContent"},
 							{variable:"#PRODCAT", value:"productCategory[i].textContent"},
 							{variable:"#ME", value:"window.top.document.getElementById('userNavLabel').textContent"},
 							{variable:"#CASEOWNER", value:'alterName(caseOwner[i].innerText)'},
-							{variable:"#ITERCNT", value:'alterName(iterationCount[i].innerText)'}
+							{variable:"#ITERCNT", value:'alterName(iterationCount[i].innerText)'},
+							{variable:"#ACCTYPE", value:'accountTypePerCase[i].textContent'},
+							{variable:"#CASEPRIO", value:'priorityEscalatedCases[i].textContent'}
 						],
 	labels 				= "sfExtension_labels.txt",
 	fileSize 			= (1024*1024)*5,
@@ -89,7 +92,8 @@ if(params.fcf) {
 	var scv = setInterval(singleCaseView, 1000);
 	reminder();
 	lfw_popup(); //popup reminder for Lead for Website
-	boa_iospecial();
+	boa_iospecial(); //popup reminder for IO Issues with Bank of America
+	commentResize(); //resizes the Add Update/Comment popup
 }
 
 function lfw_popup() {
@@ -99,6 +103,55 @@ function lfw_popup() {
 	var lfw_subject = document.getElementById("j_id0:onlinecase:j_id41:j_id52:j_id53").textContent.toLowerCase();
 	if(lfw_subject.match("lead from website"))
 		sf_popup("<h1>Reminder</h1>","Please be reminded that we have to follow the process indicated on this wiki article: <br><b>http://peg/wiki/index.php/lead-from-website-emails/</b><br> before handling this case.");
+}
+
+//TEST THIS FIRST
+function commentResize() {
+	var btns = document.getElementsByTagName("input");
+	for(var i=0 ; i<btns.length ; i++) {
+		if(btns[i].value.match("Add Update")) {
+			var attr = btns[i].getAttribute("onclick");
+			btns[i].setAttribute("onclick", "detectPopup();"+attr);
+		}
+	}
+}
+function detectPopup() {
+	var itrDetectPopup = setInterval(
+		function(){
+			var custPopup = document.getElementsByClassName("custPopup");
+			console.log("detecting popup");
+			if(custPopup.length>0) {
+				clearInterval(itrDetectPopup);
+				resizeCommentPopup();
+			}
+		}
+	,500);
+}
+function resizeCommentPopup() {
+    try {
+        updatePopup = document.getElementsByClassName("custPopup");
+        for (var m = 0; m < updatePopup.length; m++) {
+            updatePopup[m].style.height = "400px";
+            updatePopup[m].style.width = "900px";
+            updatePopup[m].style.marginLeft = "-450px";
+            updatePopup[m].style.top = "200px";
+            var ta = updatePopup[m].getElementsByTagName("textarea");
+            ta[0].style.width = "99%";
+            ta[0].style.height = "75%";
+            ta[0].style.marginTop = "15px";
+            ta[0].style.marginBottom = "25px";
+            var yy = updatePopup[m].getElementsByTagName("br");
+            for (var u = 0, max = yy.length; u < max; u++) {
+                try {
+                    updatePopup[m].removeChild(yy[u]);
+                } catch (e) {}
+            }
+        }
+        descriptionWidth = document.getElementsByClassName("sfdc_richtext");
+        descriptionWidth[0].style.whiteSpace = "pre-wrap";
+        descriptionWidth[0].style.wordWrap = "break-word";
+        descriptionWidth[0].style.width = "800px";
+    } catch (e) {}
 }
 
 function boa_iospecial() {
@@ -415,9 +468,10 @@ function initialSettings() {
 	//new rules will have an editable mode of 3 and will take the caption as the account and publisher match
 	//rules with editable mode of 1 will have a variable that would let the user edit that particular variable
 	//planning to have an advanced mode and assigned an editable mode of 2. this would let the user be more flexible on the rules
+	//if editMode is 6, do not include in Legend
 	var sfExtension = {
 		settings:{
-			name:"Salesforce Extension", version:"2.2", refreshRate:"60000", assignedCase:"#2c86ff", reserveRules:"4"
+			name:"Salesforce Extension", version:"2.6", refreshRate:"60000", assignedCase:"#2c86ff", reserveRules:"4"
 		},
 		rules:[
 			{caption:"Case exceed in (mins)", rule:"(#CASESLA - #NOW)/60000 < #XX", color:"#FFFF00", editMode:4, variable:"#XX", value:"60"},
@@ -425,9 +479,12 @@ function initialSettings() {
 			{caption:"Case exceed in (#XX mins)", rule:"(#CASESLA - #NOW)/60000 < #XX", color:"#FF6200", editMode:2, variable:"#XX", value:"15"},
 			{caption:"Case Exceeded", rule:"#CASESLA - #NOW < #XX", color:"#CC0000", editMode:2, variable:"#XX", value:"0"},
 			{caption:"Iteration Count >", rule:"#ITERCNT > #XX", color:"#2cefff", editMode:4, variable:"#XX", value:"4"},
+			{caption:"Account Type", rule:"#ACCTYPE.match('#XX')", color:"#CC0000", editMode:6, variable:"#XX", value:"Platinum", type:"FG"},
+			{caption:"Case Priority", rule:"#CASEPRIO.match('#XX')", color:"#CC0000", editMode:6, variable:"#XX", value:"Escalated", type:"FG"},
 			{caption:"Assigned Cases", rule:"#ME.match(#CASEOWNER)", color:"#2c86ff", editMode:2, variable:"", value:""},
 			{caption:"Smart Trading", rule:"#PRODCAT.match('#XX')", color:"#85ff2c", editMode:2, variable:"#XX", value:"Smart Trading"},
-			{caption:"API", rule:"#PRODCAT.match('#XX')", color:"#2ffda6", editMode:2, variable:"#XX", value:"API"}
+			{caption:"API", rule:"#PRODCAT.match('#XX')", color:"#2ffda6", editMode:2, variable:"#XX", value:"API"},
+			{caption:"Reckitt Benckiser", rule:"#ACCOUNT.toLowerCase().match('#XX'.toLowerCase())", color:"#A4C400", editMode:3, variable:"#XX", value:"Reckitt Benckiser"}
 		]
 	};
 	initSettings = sfExtension;
@@ -503,20 +560,28 @@ function settingWindow(e) {
 	
 	headerContainer 					= createDiv();
 	headerContainer.style.textAlign 	= "center";
+	headerContainer.style.background    = "#3b68fb";
+	headerContainer.style.color		    = "white";
+	headerContainer.style.fontWeight    = "900";
 	logoHandler 						= createDiv();
 	logoHandler.style.width 			= "210px";
 	logoHandler.style.height 			= "45px";
-	logoHandler.style.backgroundImage 	= 'url(https://platform.mediamind.com/aspnet_client/web_ui/2.0.0/images/TopFrame//DGMM_Logo.gif)';
+	logoHandler.style.margin    	= "0px auto";
+	logoHandler.style.backgroundPosition = "50% 50%";
+	logoHandler.style.backgroundImage 	= 'url(http://www.sizmek.com/assets/images/logo-light.png)';
+	//url(https://platform.mediamind.com/aspnet_client/web_ui/2.0.0/images/TopFrame//DGMM_Logo.gif) 
 	logoHandler.style.backgroundRepeat 	= "no-repeat";
 	logoCaption 				= createDiv();
-	logoCaption.innerText 		= "SF Chrome Extension Settings";
+	logoCaption.innerText 		= "SF Chrome Extension Settings v " + initSettings.settings.version;
 	logoCaption.style.textAlign = "center";
 	headerContainer.appendChild(logoHandler);
+	headerContainer.appendChild(logoCaption);
 	
 	topButtonContainer 						= createDiv();
 	topButtonContainer.style.width 			= "100%";
 	topButtonContainer.style.textAlign 		= "right";
 	topButtonContainer.style.marginBottom 	= "20px";
+	topButtonContainer.style.paddingTop 	= "10px";
 	closeButton = createButton("close");
 	closeButton.onclick = function() { 
 		settingsContainer.style.display = "none";
@@ -857,6 +922,8 @@ function createLegends(){
 		var caption = initSettings.rules[i].caption.replace(initSettings.rules[i].variable, initSettings.rules[i].value);
 		if(initSettings.rules[i].editMode == 1 || initSettings.rules[i].editMode == 4) {
 			legendsDiv.innerHTML += "<span style=\"border-radius:3px;padding:4px;display:inline-block;background:" +initSettings.rules[i].color + ";\">" + caption + " " + initSettings.rules[i].value + "</span>&nbsp;&nbsp;";
+		} else if(initSettings.rules[i].editMode == 6) {
+			//do nothing//console.log("excluding account type and case priority to legend.");
 		} else {
 			legendsDiv.innerHTML += "<span style=\"border-radius:3px;padding:4px;display:inline-block;background:" +initSettings.rules[i].color + ";\">" + caption + "</span>&nbsp;&nbsp;";
 		}
@@ -908,7 +975,7 @@ function getAllCaseStats() {
 		caseOwner = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-00NC0000005C8Sx");
 	else if(tier == "Online Support Tier 3")
 		caseOwner = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-OWNER_NAME");
-
+		
 	if(firstCase.length > 0){ 	//get list of cases on the queue and assign colors
 		if(document.getElementsByClassName("dgmm").length>0){ console.log("do nothing");}
 		else{		
@@ -928,10 +995,20 @@ function getAllCaseStats() {
 					for(var vars=0 ; vars<definedVariables.length ; vars++) rule = rule.replace(definedVariables[vars].variable, definedVariables[vars].value);
 					try{
 						if(eval(rule) && datePerCase[i]) {
-							if(itr >= 0 && itr < 5)	tmpColor = rules[itr].color;
-							else getClrPrElem(datePerCase[i].parentElement.parentElement, rules[itr].color);
+							if(itr >= 0 && itr < 5) tmpColor = rules[itr].color;
+							else {
+								if(typeof(rules[itr].type)!="undefined"&&rules[itr].type=="FG") {
+									if(rules[itr].caption.match("Account Type"))
+										getClrPrElem(accountTypePerCase[i].offsetParent, rules[itr].color, "FG");
+									if(rules[itr].caption.match("Case Priority"))
+										getClrPrElem(priorityEscalatedCases[i].offsetParent, rules[itr].color, "FG");
+								 } else
+									getClrPrElem(datePerCase[i].parentElement.parentElement, rules[itr].color);
+							}
 						}
-						if(itr == rules.length-1 && tmpColor != "")	getClrPrElem(datePerCase[i].parentElement.parentElement, tmpColor);
+						if(itr == rules.length-1 && tmpColor != "")	{
+							getClrPrElem(datePerCase[i].parentElement.parentElement, tmpColor);
+						}
 					}catch(e){}
 				}
 				if(window.top.document.getElementById('userNavLabel').textContent.match( alterName(caseOwner[i].innerText) ))
@@ -943,6 +1020,16 @@ function getAllCaseStats() {
 					var elemx = datePerCase[i].parentElement.parentElement;
 					var colorsx = datePerCase[i].parentElement.parentElement.getAttribute("colors").split(",");
 					blinkDiv(elemx, colorsx);
+				}
+				//detect foreground rules for account type
+				if(accountTypePerCase[i].offsetParent.getAttribute("colorsFG")) {
+					accountTypePerCase[i].offsetParent.style.color = accountTypePerCase[i].offsetParent.getAttribute("colorsFG");
+                    accountTypePerCase[i].offsetParent.style.fontWeight = "900";
+				}
+				//detect foreground rules for priority escalated cases
+				if(priorityEscalatedCases[i].offsetParent.getAttribute("colorsFG")) {
+					priorityEscalatedCases[i].offsetParent.style.color = priorityEscalatedCases[i].offsetParent.getAttribute("colorsFG");
+                    priorityEscalatedCases[i].offsetParent.style.fontWeight = "900";
 				}
 			}	
 		}
@@ -1000,7 +1087,8 @@ function getSLA_NOW(CASE_SLA){
 	var NOW,SLA,monthDiff,days_remaining,hours_remaining,minutes_remaining,hours_remaining,total_result;
 	
 	NOW = new Date();
-	SLA = new Date(CASE_SLA);
+	SLA = reFormatDate(CASE_SLA);
+	
 	if(NOW.getMonth()%4 == 0) daysInAMonth[1] = 29;
 	monthDiff 			= SLA.getMonth() == NOW.getMonth() ? 0 : daysInAMonth[NOW.getMonth()];
 	days_remaining		= SLA.getMonth() == NOW.getMonth() ? SLA.getDate() - NOW.getDate() : NOW > SLA ? SLA.getDate()-(monthDiff+NOW.getDate()) : Math.abs((SLA.getDate() + monthDiff) - NOW.getDate());
@@ -1008,7 +1096,38 @@ function getSLA_NOW(CASE_SLA){
 	minutes_remaining	= (SLA.getMinutes() - NOW.getMinutes());
 	hours_remaining		= hours_remaining + (days_remaining * 24);
 	total_result		= (hours_remaining * 60) + minutes_remaining;
+	
 	return total_result;
+}
+
+function reFormatDate(strDate) {
+	var resultDate = new Date();
+	var tempDate = strDate.split(' ')[0].split('/');
+	var tempTime = strDate.split(' ')[1].split(':');
+	var tempAMPM = strDate.split(' ')[2];
+	var dateFormat = UserContext.dateFormat.split("/");
+	
+	//handles the month, day, and year
+	for(var i=0 ; i<dateFormat.length ; i++) {
+		if(dateFormat[i].toLowerCase().match("d")){
+			resultDate.setDate(tempDate[i]);
+		} else if(dateFormat[i].toLowerCase().match("m")) {
+			resultDate.setMonth( (tempDate[i]-1) );
+		} else if(dateFormat[i].toLowerCase().match("y")) {
+			resultDate.setYear(tempDate[i]);
+		}
+	}
+	//handles if PM OR AM //handles the minutes and hours
+	if(tempAMPM.match("PM")) {
+		resultDate.setHours((parseInt(tempTime[0]) + 12));
+	} else if(tempAMPM.match("AM") && tempTime[0]==12) {
+		resultDate.setHours( parseInt(tempTime[0]-12) );
+	} else {
+		resultDate.setHours(tempTime[0]);
+	}	
+	resultDate.setMinutes(tempTime[1]);	
+	
+	return resultDate;
 }
 
 function blinkDiv(elem, colors) {
@@ -1019,27 +1138,56 @@ function blinkDiv(elem, colors) {
 
 function getCurrentSeconds() { return  new Date().getSeconds();}
 
-function getClrPrElem(elem, color) {
+function getClrPrElem(elem, color, clrtype) {
 	try {
-		var attr, clrs = [], result = "";
+		var attrBG, clrsBG = [], resultBG = "";
+		var attrFG, clrsFG = [], resultFG = "";
+		
+		if(typeof(elem)=="undefined") {console.log("elem is null");return;}
+		
+		if(typeof(clrtype)!="undefined"&&clrtype.match("FG")) {
+			if(elem.getAttribute("colorsFG")!=null) {
+				attrFG = elem.getAttribute("colorsFG");
+				clrsFG = attrFG.split(",");
+			}
+			if(color != "" || typeof(color) != "undefined" || color != null) {
+				if(clrsFG.indexOf(color) == -1)
+					clrsFG.push(color);
+				for(var itr=0 ; itr<clrsFG.length ; itr++) {
+					if(clrsFG[itr] != "") {
+						resultFG += clrsFG[itr];
+						if(typeof(clrsFG[itr+1]) != "undefined") {
+							resultFG += ",";
+						}
+					}
+				}
+				
+				elem.setAttribute("colorsFG", resultFG);
+			}
+		} 
+		
 		if(elem.getAttribute("colors")!=null) {
-			attr = elem.getAttribute("colors");
-			clrs = attr.split(",");
+			attrBG = elem.getAttribute("colors");
+			clrsBG = attrBG.split(",");
 		}
 		if(color != "" || typeof(color) != "undefined" || color != null) {
-			if(clrs.indexOf(color) == -1)
-				clrs.push(color);
-			for(var itr=0 ; itr<clrs.length ; itr++) {
-				if(clrs[itr] != "") {
-					result += clrs[itr];
-					if(typeof(clrs[itr+1]) != "undefined") {
-						result += ",";
+			if(clrsBG.indexOf(color) == -1)
+				clrsBG.push(color);
+			for(var itr=0 ; itr<clrsBG.length ; itr++) {
+				if(clrsBG[itr] != "") {
+					resultBG += clrsBG[itr];
+					if(typeof(clrsBG[itr+1]) != "undefined") {
+						resultBG += ",";
 					}
 				}
 			}
-			elem.setAttribute("colors", result);
+			elem.setAttribute("colors", resultBG);
+			if(elem.getAttribute("colorsFG")!=null) {
+				elem.setAttribute("colorsFG", resultBG);
+			}
 		}
-	}catch(e) {}
+		
+	}catch(e) { console.log(e);}
 }
 
 function reminder(){ //reminder
