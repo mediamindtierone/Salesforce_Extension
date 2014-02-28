@@ -1103,108 +1103,33 @@ function getSLA_NOW(CASE_SLA){
 }
 
 function reFormatDate(strDate) {
-	try {
-		var resultDate = new Date();
-		var tempDate = strDate;
-		
-		//split the time and date
-		var splitDate = strDate.split(" ");
-		var splitTimeFormat =  UserContext.dateTimeFormat.split(" ");
-		
-		//loop it
-		for(var i=0 ; i<splitDate.length ; i++) {
-			if(splitTimeFormat[i].toLowerCase().match("y")) {
-				if(splitTimeFormat[i].match("/")) 
-					resultDate = checkDate(splitDate[i], splitTimeFormat[i], "/");
-				else if(splitTimeFormat[i].match("-")) 
-					resultDate = checkDate(splitDate[i], splitTimeFormat[i], "-");
-				else if(splitTimeFormat[i].match(".")) 
-					resultDate = checkDate(splitDate[i], splitTimeFormat[i], ".");
-			}
-			
-			if(splitTimeFormat[i].toLowerCase().match("h")) {
-				resultDate = checkTime(splitDate[i], splitTimeFormat[i], resultDate);
-			}
-		}
-	}catch(ex) {console.log("ERROR at reFormatDate");}
-	return resultDate;
-}
-
-function checkDate(dateItem, dateFormat, identifier) {
-	var tempDate;
-	var tempFormat;
 	var resultDate = new Date();
-	//check for identifiers
-	if(dateItem.indexOf(identifier)>=0) {//if true proceed splitting
-		tempDate = dateItem.split(identifier);
-		tempFormat = dateFormat.split(identifier);
-		for(var i=0 ; i<tempDate.length ; i++) {
-			if(tempFormat[i].toLowerCase().match("y")) {
-				resultDate.setYear(tempDate[i]);
-			} else if(tempFormat[i].match("M")) {
-				resultDate.setMonth(tempDate[i]-1);
-			} else if(tempFormat[i].toLowerCase().match("d")) {
-				resultDate.setDate(tempDate[i]);
-			}
-		}
-	} 
-	return resultDate;
-}
-
-function checkTime(dateItem, dateFormat, resultDate) {
-	var tempDate;
-	var tempFormat;
-	var identifier = ":";
+	var tempDate = strDate.split(' ')[0].split('/');
+	var tempTime = strDate.split(' ')[1].split(':');
+	var tempAMPM = strDate.split(' ')[2];
+	var dateFormat = UserContext.dateFormat.split("/");
 	
-	var tempRes = resultDate.toLocaleString();
-	if(tempRes.indexOf("AM")>=0) {
-		resultDate = new Date(tempRes.substring(0, tempRes.indexOf("AM")) + tempRes.substring(tempRes.indexOf("AM")+2, tempRes.length));
-	}else if(tempRes.indexOf("PM")>=0) {
-		resultDate = new Date(tempRes.substring(0, tempRes.indexOf("PM")) + tempRes.substring(tempRes.indexOf("PM")+2, tempRes.length));
+	//handles the month, day, and year
+	for(var i=0 ; i<dateFormat.length ; i++) {
+		if(dateFormat[i].toLowerCase().match("d")){
+			resultDate.setDate(tempDate[i]);
+		} else if(dateFormat[i].toLowerCase().match("m")) {
+			resultDate.setMonth( (tempDate[i]-1) );
+		} else if(dateFormat[i].toLowerCase().match("y")) {
+			resultDate.setYear(tempDate[i]);
+		}
+	}
+	//handles if PM OR AM //handles the minutes and hours
+	if(tempAMPM.match("PM")) {
+		resultDate.setHours((parseInt(tempTime[0]) + 12));
+	} else if(tempAMPM.match("AM") && tempTime[0]==12) {
+		resultDate.setHours( parseInt(tempTime[0]-12) );
 	} else {
-		resultDate = new Date(tempRes);
-	}
-	//maybe add 12 if it is PM?
-	
-	if(dateItem.indexOf(identifier)>=0) {
-		tempDate = dateItem.split(identifier);
-		tempFormat = dateFormat.split(identifier);
-		for(var i=0 ; i<tempDate.length ; i++) {
-			if(tempFormat[i].toLowerCase().match("h")) {
-				if(tempFormat[i].toLowerCase().match("a")) {
-					resultDate.setHours(checkAMPM(tempDate[i]));
-				} else if(tempFormat[i].toLowerCase().match("p")) {
-					resultDate.setHours(checkAMPM(tempDate[i]));
-				} else {
-					resultDate.setHours(tempDate[i]);
-				}
-			} else if(tempFormat[i].match("m")) {
-				resultDate.setMinutes(tempDate[i]);
-			}
-		}
-	}
+		resultDate.setHours(tempTime[0]);
+	}	
+	resultDate.setMinutes(tempTime[1]);	
 	
 	return resultDate;
-}
-
-function checkAMPM(str) {
-	str  = str.toLowerCase();
-	var tempResult = "";
-	if(str.indexOf("a")>=0) {
-		tempResult = str.substring(str.indexOf("a")+1, str.length);
-		if(str.toLowerCase().indexOf("m")>=0)
-			tempResult = str.substring(str.indexOf("m")+1, str.length);
-	}
-	
-	if(str.toLowerCase().indexOf("p")>=0) {
-		tempResult = str.substring(str.indexOf("p")+1, str.length);
-		if(str.toLowerCase().indexOf("m")>=0)
-			tempResult = parseInt(str.substring(str.indexOf("m")+1, str.length)) + 12;
-		else 
-			tempResult = parseInt(tempResult) + 12;
-	}
-	
-	return tempResult;
 }
 
 function blinkDiv(elem, colors) {
