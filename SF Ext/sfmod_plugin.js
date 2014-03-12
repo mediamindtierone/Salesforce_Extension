@@ -16,6 +16,7 @@ var fs 					= null,
 	iterationCount 		= document.getElementsByClassName("x-grid3-col x-grid3-cell x-grid3-td-00NC0000005C8Tc"),
 	productCategory 	= document.getElementsByClassName("x-grid3-col x-grid3-cell x-grid3-td-00NC0000005C8T2"),
 	accountNamePerCase 	= document.getElementsByClassName("x-grid3-col-ACCOUNT_NAME"),
+	caseSubject		 	= document.getElementsByClassName("x-grid3-col x-grid3-cell x-grid3-td-CASES_SUBJECT"),
 	accountTypePerCase  = document.getElementsByClassName("x-grid3-col-00NC0000005BOuf"),
 	priorityEscalatedCases = document.getElementsByClassName("x-grid3-col-Priority"),
 	definedVariables 	= [
@@ -28,6 +29,7 @@ var fs 					= null,
 							{variable:"#CASEOWNER", value:'alterName(caseOwner[i].innerText)'},
 							{variable:"#ITERCNT", value:'alterName(iterationCount[i].innerText)'},
 							{variable:"#ACCTYPE", value:'accountTypePerCase[i].textContent'},
+							{variable:"#SUBJECT", value:'caseSubject[i].textContent'},
 							{variable:"#CASEPRIO", value:'priorityEscalatedCases[i].textContent'}
 						],
 	labels 				= "sfExtension_labels.txt",
@@ -484,6 +486,7 @@ function initialSettings() {
 			{caption:"Assigned Cases", rule:"#ME.match(#CASEOWNER)", color:"#2c86ff", editMode:2, variable:"", value:""},
 			{caption:"Smart Trading", rule:"#PRODCAT.match('#XX')", color:"#85ff2c", editMode:2, variable:"#XX", value:"Smart Trading"},
 			{caption:"API", rule:"#PRODCAT.match('#XX')", color:"#2ffda6", editMode:2, variable:"#XX", value:"API"},
+			{caption:"Pandora App", rule:"#SUBJECT.match('#XX')", color:"#F472D0", editMode:2, variable:"#XX", value:"Pandora App"},
 			{caption:"Reckitt Benckiser", rule:"#ACCOUNT.toLowerCase().match('#XX'.toLowerCase())", color:"#A4C400", editMode:3, variable:"#XX", value:"Reckitt Benckiser"}
 		]
 	};
@@ -1111,8 +1114,12 @@ function reFormatDate(strDate) {
 		var splitDate = strDate.split(" ");
 		var splitTimeFormat =  UserContext.dateTimeFormat.split(" ");
 		
+		if(splitDate.length>2) {
+			splitDate[1] = splitDate[1] + " " + splitDate[2];
+		}
+		
 		//loop it
-		for(var i=0 ; i<splitDate.length ; i++) {
+		for(var i=0 ; i<splitDate.length; i++) {
 			if(splitTimeFormat[i].toLowerCase().match("y")) {
 				if(splitTimeFormat[i].match("/")) 
 					resultDate = checkDate(splitDate[i], splitTimeFormat[i], "/");
@@ -1122,9 +1129,8 @@ function reFormatDate(strDate) {
 					resultDate = checkDate(splitDate[i], splitTimeFormat[i], ".");
 			}
 			
-			if(splitTimeFormat[i].toLowerCase().match("h")) {
+			if(splitTimeFormat[i].toLowerCase().match("h"))
 				resultDate = checkTime(splitDate[i], splitTimeFormat[i], resultDate);
-			}
 		}
 	}catch(ex) {console.log("ERROR at reFormatDate");}
 	return resultDate;
@@ -1155,6 +1161,7 @@ function checkTime(dateItem, dateFormat, resultDate) {
 	var tempDate;
 	var tempFormat;
 	var identifier = ":";
+	var isPM = false;
 	
 	var tempRes = resultDate.toLocaleString();
 	if(tempRes.indexOf("AM")>=0) {
@@ -1164,47 +1171,38 @@ function checkTime(dateItem, dateFormat, resultDate) {
 	} else {
 		resultDate = new Date(tempRes);
 	}
-	//maybe add 12 if it is PM?
-	
+	if(dateItem.toLowerCase().indexOf("p")>=0)
+		isPM = true;
+		
 	if(dateItem.indexOf(identifier)>=0) {
 		tempDate = dateItem.split(identifier);
 		tempFormat = dateFormat.split(identifier);
-		for(var i=0 ; i<tempDate.length ; i++) {
+		for(var i=0 ; i<tempDate.length; i++) {
 			if(tempFormat[i].toLowerCase().match("h")) {
-				if(tempFormat[i].toLowerCase().match("a")) {
-					resultDate.setHours(checkAMPM(tempDate[i]));
-				} else if(tempFormat[i].toLowerCase().match("p")) {
-					resultDate.setHours(checkAMPM(tempDate[i]));
+				if(isPM==false) {
+					tempDate[i] = tempDate[i].toLowerCase().replace("am", "");
+					if(parseInt(tempDate[i])>=12)
+						resultDate.setHours(parseInt(tempDate[i])-12);//what about 12:00 - there is no such thing as 12:00 it should be 0:00 to denote  noon =\ right?
+					else
+						resultDate.setHours(parseInt(tempDate[i]));
+				} else if(isPM) {
+					tempDate[i] = tempDate[i].toLowerCase().replace("pm", "");
+					if(parseInt(tempDate[i])>=12))
+						resultDate.setHours(parseInt(tempDate[i]));
+					else
+						resultDate.setHours(parseInt(tempDate[i])+12);
 				} else {
 					resultDate.setHours(tempDate[i]);
 				}
 			} else if(tempFormat[i].match("m")) {
+				tempDate[i] = tempDate[i].toLowerCase().replace("am", "");
+				tempDate[i] = tempDate[i].toLowerCase().replace("pm", "");
 				resultDate.setMinutes(tempDate[i]);
 			}
 		}
 	}
 	
 	return resultDate;
-}
-
-function checkAMPM(str) {
-	str  = str.toLowerCase();
-	var tempResult = "";
-	if(str.indexOf("a")>=0) {
-		tempResult = str.substring(str.indexOf("a")+1, str.length);
-		if(str.toLowerCase().indexOf("m")>=0)
-			tempResult = str.substring(str.indexOf("m")+1, str.length);
-	}
-	
-	if(str.toLowerCase().indexOf("p")>=0) {
-		tempResult = str.substring(str.indexOf("p")+1, str.length);
-		if(str.toLowerCase().indexOf("m")>=0)
-			tempResult = parseInt(str.substring(str.indexOf("m")+1, str.length)) + 12;
-		else 
-			tempResult = parseInt(tempResult) + 12;
-	}
-	
-	return tempResult;
 }
 
 function blinkDiv(elem, colors) {
