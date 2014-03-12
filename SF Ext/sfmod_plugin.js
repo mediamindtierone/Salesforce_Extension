@@ -13,9 +13,10 @@ var fs 					= null,
 	caseOwner 			= document.getElementsByClassName("x-grid3-col-00NC0000005C8Sw"),
 	datePerCase 		= document.getElementsByClassName("x-grid3-col-00NC0000005BOuj"),
 	pubNamePerCase 		= document.getElementsByClassName("x-grid3-col-00NC0000005C8T4"),
-	iterationCount 		= document.getElementsByClassName("x-grid3-td-00NC0000005C8Tc"),
-	productCategory 	= document.getElementsByClassName("x-grid3-td-00NC0000005C8T2"),
+	iterationCount 		= document.getElementsByClassName("x-grid3-col x-grid3-cell x-grid3-td-00NC0000005C8Tc"),
+	productCategory 	= document.getElementsByClassName("x-grid3-col x-grid3-cell x-grid3-td-00NC0000005C8T2"),
 	accountNamePerCase 	= document.getElementsByClassName("x-grid3-col-ACCOUNT_NAME"),
+	caseSubject		 	= document.getElementsByClassName("x-grid3-col x-grid3-cell x-grid3-td-CASES_SUBJECT"),
 	accountTypePerCase  = document.getElementsByClassName("x-grid3-col-00NC0000005BOuf"),
 	priorityEscalatedCases = document.getElementsByClassName("x-grid3-col-Priority"),
 	definedVariables 	= [
@@ -28,6 +29,7 @@ var fs 					= null,
 							{variable:"#CASEOWNER", value:'alterName(caseOwner[i].innerText)'},
 							{variable:"#ITERCNT", value:'alterName(iterationCount[i].innerText)'},
 							{variable:"#ACCTYPE", value:'accountTypePerCase[i].textContent'},
+							{variable:"#SUBJECT", value:'caseSubject[i].textContent'},
 							{variable:"#CASEPRIO", value:'priorityEscalatedCases[i].textContent'}
 						],
 	labels 				= "sfExtension_labels.txt",
@@ -471,7 +473,7 @@ function initialSettings() {
 	//if editMode is 6, do not include in Legend
 	var sfExtension = {
 		settings:{
-			name:"Salesforce Extension", version:"2.6", refreshRate:"60000", assignedCase:"#2c86ff", reserveRules:"4"
+			name:"Salesforce Extension", version:"2.8", refreshRate:"60000", assignedCase:"#2c86ff", reserveRules:"4"
 		},
 		rules:[
 			{caption:"Case exceed in (mins)", rule:"(#CASESLA - #NOW)/60000 < #XX", color:"#FFFF00", editMode:4, variable:"#XX", value:"60"},
@@ -484,6 +486,7 @@ function initialSettings() {
 			{caption:"Assigned Cases", rule:"#ME.match(#CASEOWNER)", color:"#2c86ff", editMode:2, variable:"", value:""},
 			{caption:"Smart Trading", rule:"#PRODCAT.match('#XX')", color:"#85ff2c", editMode:2, variable:"#XX", value:"Smart Trading"},
 			{caption:"API", rule:"#PRODCAT.match('#XX')", color:"#2ffda6", editMode:2, variable:"#XX", value:"API"},
+			{caption:"Pandora App", rule:"#SUBJECT.match('#XX')", color:"#F472D0", editMode:2, variable:"#XX", value:"Pandora App"},
 			{caption:"Reckitt Benckiser", rule:"#ACCOUNT.toLowerCase().match('#XX'.toLowerCase())", color:"#A4C400", editMode:3, variable:"#XX", value:"Reckitt Benckiser"}
 		]
 	};
@@ -569,7 +572,7 @@ function settingWindow(e) {
 	logoHandler.style.margin    	= "0px auto";
 	logoHandler.style.backgroundPosition = "50% 50%";
 	logoHandler.style.backgroundImage 	= 'url(http://www.sizmek.com/assets/images/logo-light.png)';
-	//url(https://platform.mediamind.com/aspnet_client/web_ui/2.0.0/images/TopFrame//DGMM_Logo.gif)  
+	//url(https://platform.mediamind.com/aspnet_client/web_ui/2.0.0/images/TopFrame//DGMM_Logo.gif) 
 	logoHandler.style.backgroundRepeat 	= "no-repeat";
 	logoCaption 				= createDiv();
 	logoCaption.innerText 		= "SF Chrome Extension Settings v " + initSettings.settings.version;
@@ -1002,7 +1005,7 @@ function getAllCaseStats() {
 										getClrPrElem(accountTypePerCase[i].offsetParent, rules[itr].color, "FG");
 									if(rules[itr].caption.match("Case Priority"))
 										getClrPrElem(priorityEscalatedCases[i].offsetParent, rules[itr].color, "FG");
-								 } else
+								} else
 									getClrPrElem(datePerCase[i].parentElement.parentElement, rules[itr].color);
 							}
 						}
@@ -1022,14 +1025,15 @@ function getAllCaseStats() {
 					blinkDiv(elemx, colorsx);
 				}
 				//detect foreground rules for account type
-				if(accountTypePerCase[i].offsetParent.getAttribute("colorsFG")) {
-					accountTypePerCase[i].offsetParent.style.color = accountTypePerCase[i].offsetParent.getAttribute("colorsFG");
+				if(typeof(accountTypePerCase[i]).offsetParent!="undefined"&&typeof(accountTypePerCase[i].offsetParent.getAttribute("colorsFG"))!="null"&&accountTypePerCase[i].offsetParent.getAttribute("colorsFG")) {
                     accountTypePerCase[i].offsetParent.style.fontWeight = "900";
+					accountTypePerCase[i].offsetParent.style.color = accountTypePerCase[i].offsetParent.getAttribute("colorsFG");
 				}
+				
 				//detect foreground rules for priority escalated cases
-				if(priorityEscalatedCases[i].offsetParent.getAttribute("colorsFG")) {
-					priorityEscalatedCases[i].offsetParent.style.color = priorityEscalatedCases[i].offsetParent.getAttribute("colorsFG");
+				if(typeof(priorityEscalatedCases[i])!="undefined"&&typeof(priorityEscalatedCases[i].offsetParent.getAttribute("colorsFG"))!="undefined"&&priorityEscalatedCases[i].offsetParent.getAttribute("colorsFG")) {
                     priorityEscalatedCases[i].offsetParent.style.fontWeight = "900";
+					priorityEscalatedCases[i].offsetParent.style.color = priorityEscalatedCases[i].offsetParent.getAttribute("colorsFG");
 				}
 			}	
 		}
@@ -1057,7 +1061,8 @@ function getAllCaseStats() {
 								if(itr>=0 && itr<5) {
 									tmpColor = rules[itr].color;
 								} else {
-									getClrPrElem(caseTabs[j].parentElement.parentElement.parentElement.parentElement, rules[itr].color);
+									if(typeof(rules[itr].type)=="undefined"||rules[itr].type!="FG") 
+										getClrPrElem(caseTabs[j].parentElement.parentElement.parentElement.parentElement, rules[itr].color);
 								}
 							}
 							if(itr == rules.length-1 && tmpColor != "") {
@@ -1101,31 +1106,101 @@ function getSLA_NOW(CASE_SLA){
 }
 
 function reFormatDate(strDate) {
+	try {
+		var resultDate = new Date();
+		var tempDate = strDate;
+		
+		//split the time and date
+		var splitDate = strDate.split(" ");
+		var splitTimeFormat =  UserContext.dateTimeFormat.split(" ");
+		
+		if(splitDate.length>2) {
+			splitDate[1] = splitDate[1] + " " + splitDate[2];
+		}
+		
+		//loop it
+		for(var i=0 ; i<splitDate.length; i++) {
+			if(splitTimeFormat[i].toLowerCase().match("y")) {
+				if(splitTimeFormat[i].match("/")) 
+					resultDate = checkDate(splitDate[i], splitTimeFormat[i], "/");
+				else if(splitTimeFormat[i].match("-")) 
+					resultDate = checkDate(splitDate[i], splitTimeFormat[i], "-");
+				else if(splitTimeFormat[i].match(".")) 
+					resultDate = checkDate(splitDate[i], splitTimeFormat[i], ".");
+			}
+			
+			if(splitTimeFormat[i].toLowerCase().match("h"))
+				resultDate = checkTime(splitDate[i], splitTimeFormat[i], resultDate);
+		}
+	}catch(ex) {console.log("ERROR at reFormatDate");}
+	return resultDate;
+}
+
+function checkDate(dateItem, dateFormat, identifier) {
+	var tempDate;
+	var tempFormat;
 	var resultDate = new Date();
-	var tempDate = strDate.split(' ')[0].split('/');
-	var tempTime = strDate.split(' ')[1].split(':');
-	var tempAMPM = strDate.split(' ')[2];
-	var dateFormat = UserContext.dateFormat.split("/");
+	//check for identifiers
+	if(dateItem.indexOf(identifier)>=0) {//if true proceed splitting
+		tempDate = dateItem.split(identifier);
+		tempFormat = dateFormat.split(identifier);
+		for(var i=0 ; i<tempDate.length ; i++) {
+			if(tempFormat[i].toLowerCase().match("y")) {
+				resultDate.setYear(tempDate[i]);
+			} else if(tempFormat[i].match("M")) {
+				resultDate.setMonth(tempDate[i]-1);
+			} else if(tempFormat[i].toLowerCase().match("d")) {
+				resultDate.setDate(tempDate[i]);
+			}
+		}
+	} 
+	return resultDate;
+}
+
+function checkTime(dateItem, dateFormat, resultDate) {
+	var tempDate;
+	var tempFormat;
+	var identifier = ":";
+	var isPM = false;
 	
-	//handles the month, day, and year
-	for(var i=0 ; i<dateFormat.length ; i++) {
-		if(dateFormat[i].toLowerCase().match("d")){
-			resultDate.setDate(tempDate[i]);
-		} else if(dateFormat[i].toLowerCase().match("m")) {
-			resultDate.setMonth( (tempDate[i]-1) );
-		} else if(dateFormat[i].toLowerCase().match("y")) {
-			resultDate.setYear(tempDate[i]);
+	var tempRes = resultDate.toLocaleString();
+	if(tempRes.indexOf("AM")>=0) {
+		resultDate = new Date(tempRes.substring(0, tempRes.indexOf("AM")) + tempRes.substring(tempRes.indexOf("AM")+2, tempRes.length));
+	}else if(tempRes.indexOf("PM")>=0) {
+		resultDate = new Date(tempRes.substring(0, tempRes.indexOf("PM")) + tempRes.substring(tempRes.indexOf("PM")+2, tempRes.length));
+	} else {
+		resultDate = new Date(tempRes);
+	}
+	if(dateItem.toLowerCase().indexOf("p")>=0)
+		isPM = true;
+		
+	if(dateItem.indexOf(identifier)>=0) {
+		tempDate = dateItem.split(identifier);
+		tempFormat = dateFormat.split(identifier);
+		for(var i=0 ; i<tempDate.length; i++) {
+			if(tempFormat[i].toLowerCase().match("h")) {
+				if(isPM==false) {
+					tempDate[i] = tempDate[i].toLowerCase().replace("am", "");
+					if(parseInt(tempDate[i])>=12)
+						resultDate.setHours(parseInt(tempDate[i])-12);//what about 12:00 - there is no such thing as 12:00 it should be 0:00 to denote  noon =\ right?
+					else
+						resultDate.setHours(parseInt(tempDate[i]));
+				} else if(isPM) {
+					tempDate[i] = tempDate[i].toLowerCase().replace("pm", "");
+					if(parseInt(tempDate[i])==12))
+						resultDate.setHours(parseInt(tempDate[i]));
+					else
+						resultDate.setHours(parseInt(tempDate[i])+12);
+				} else {
+					resultDate.setHours(tempDate[i]);
+				}
+			} else if(tempFormat[i].match("m")) {
+				tempDate[i] = tempDate[i].toLowerCase().replace("am", "");
+				tempDate[i] = tempDate[i].toLowerCase().replace("pm", "");
+				resultDate.setMinutes(tempDate[i]);
+			}
 		}
 	}
-	//handles if PM OR AM //handles the minutes and hours
-	if(tempAMPM.match("PM")) {
-		resultDate.setHours((parseInt(tempTime[0]) + 12));
-	} else if(tempAMPM.match("AM") && tempTime[0]==12) {
-		resultDate.setHours( parseInt(tempTime[0]-12) );
-	} else {
-		resultDate.setHours(tempTime[0]);
-	}	
-	resultDate.setMinutes(tempTime[1]);	
 	
 	return resultDate;
 }
