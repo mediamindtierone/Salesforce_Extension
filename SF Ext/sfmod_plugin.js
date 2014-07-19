@@ -13,12 +13,12 @@ var fs 					= null,
 	caseOwner 			= document.getElementsByClassName("x-grid3-col-00NC0000005C8Sw"),
 	datePerCase 		= document.getElementsByClassName("x-grid3-col-00NC0000005BOuj"),
 	pubNamePerCase 		= document.getElementsByClassName("x-grid3-col-00NC0000005C8T4"),
-	iterationCount 		= document.getElementsByClassName("x-grid3-col x-grid3-cell x-grid3-td-00NC0000005C8Tc"),
+	iterationCount 		= document.getElementsByClassName("x-grid3-col x-grid3-cell x-grid3-td-00NC0000005haWO"),
 	productCategory 	= document.getElementsByClassName("x-grid3-col x-grid3-cell x-grid3-td-00NC0000005C8T2"),
 	accountNamePerCase 	= document.getElementsByClassName("x-grid3-col-ACCOUNT_NAME"),
 	caseSubject		 	= document.getElementsByClassName("x-grid3-col x-grid3-cell x-grid3-td-CASES_SUBJECT"),
 	accountTypePerCase  = document.getElementsByClassName("x-grid3-col-00NC0000005BOuf"),
-	priorityEscalatedCases = document.getElementsByClassName("x-grid3-col-Priority"),
+	priorityEscalatedCases = document.getElementsByClassName("x-grid3-cell-inner x-grid3-col-CASES_PRIORITY"),
 	definedVariables 	= [
 							{variable:"#NOW", value:"new Date()"},
 							{variable:"#CASESLA", value:"reFormatDate(datePerCase[i].textContent)"},
@@ -454,7 +454,7 @@ function sf_append(val, filename) {
 		for(var x2=0 ; x2<itr ; x2++) { initSettings.rules.splice(initSettings.rules.length-1, 1); }
 		initSettings.rules.push(val);
 		for(var x3=itr-1 ; x3>-1 ; x3--) { initSettings.rules.push(temp[x3]); }
-	} catch(e) { console.log("Error: sf_append : contact windhel"); }
+	} catch(e) { console.log("Error: sf_append : " + e); }
 }
 
 function sf_read(filename) {
@@ -473,18 +473,19 @@ function initialSettings() {
 	//if editMode is 6, do not include in Legend
 	var sfExtension = {
 		settings:{
-			name:"Salesforce Extension", version:"2.6", refreshRate:"60000", assignedCase:"#2c86ff", reserveRules:"4"
+			name:"Salesforce Extension", version:"3.2", refreshRate:"60000", assignedCase:"#2c86ff", reserveRules:"4", blink:true
 		},
 		rules:[
 			{caption:"Case exceed in (mins)", rule:"(#CASESLA - #NOW)/60000 < #XX", color:"#FFFF00", editMode:4, variable:"#XX", value:"60"},
 			{caption:"Case exceed in (#XX mins)", rule:"(#CASESLA - #NOW)/60000 < #XX", color:"#FF9700", editMode:2, variable:"#XX", value:"30"},
 			{caption:"Case exceed in (#XX mins)", rule:"(#CASESLA - #NOW)/60000 < #XX", color:"#FF6200", editMode:2, variable:"#XX", value:"15"},
 			{caption:"Case Exceeded", rule:"#CASESLA - #NOW < #XX", color:"#CC0000", editMode:2, variable:"#XX", value:"0"},
-			{caption:"Iteration Count >", rule:"#ITERCNT > #XX", color:"#2cefff", editMode:4, variable:"#XX", value:"4"},
+			{caption:"Iteration Count >", rule:"#ITERCNT > #XX", color:"#2cefff", editMode:2, variable:"#XX", value:"4"},
 			{caption:"Account Type", rule:"#ACCTYPE.match('#XX')", color:"#CC0000", editMode:6, variable:"#XX", value:"Platinum", type:"FG"},
 			{caption:"Case Priority", rule:"#CASEPRIO.match('#XX')", color:"#CC0000", editMode:6, variable:"#XX", value:"Escalated", type:"FG"},
 			{caption:"Assigned Cases", rule:"#ME.match(#CASEOWNER)", color:"#2c86ff", editMode:2, variable:"", value:""},
 			{caption:"Smart Trading", rule:"#PRODCAT.match('#XX')", color:"#85ff2c", editMode:2, variable:"#XX", value:"Smart Trading"},
+			{caption:"Smart Trading Subject", rule:"#SUBJECT.match('#XX')", color:"#85ff2c", editMode:6, variable:"#XX", value:"Smart Trading"},
 			{caption:"API", rule:"#PRODCAT.match('#XX')", color:"#2ffda6", editMode:2, variable:"#XX", value:"API"},
 			{caption:"Pandora App", rule:"#SUBJECT.match('#XX')", color:"#F472D0", editMode:2, variable:"#XX", value:"Pandora App"},
 			{caption:"Reckitt Benckiser", rule:"#ACCOUNT.toLowerCase().match('#XX'.toLowerCase())", color:"#A4C400", editMode:3, variable:"#XX", value:"Reckitt Benckiser"}
@@ -493,6 +494,7 @@ function initialSettings() {
 	initSettings = sfExtension;
 	if(typeof(_RESULT)=="undefined" || _RESULT == "undefined" || _RESULT == "")
 		sf_write(JSON.stringify(sfExtension), false, labels);
+	return sfExtension;
 }
 
 function buildInitSettings() { //plugin settings
@@ -629,17 +631,36 @@ function settingWindow(e) {
 		initSettings.settings.refreshRate = this.value;
 	}
 	refreshLabel2 				= createDiv();
-	refreshLabel2.innerText 	= "milliseconds";
+	refreshLabel2.innerText 	= "ms";
 	refreshLabel2.style.display = "table-cell";
 	refreshHolder.appendChild(refreshLabel);
 	refreshHolder.appendChild(refreshText);
 	refreshHolder.appendChild(refreshLabel2);
+	
+	var blinkHolder, blinkIt, blinkLabel;
+	blinkHolder = createDiv();
+	blinkHolder.style.float 		= "left";
+	blinkHolder.style.display 		= "table";
+	blinkHolder.style.textAlign 	= "left";
+	blinkHolder.style.paddingLeft	= "10px";
+	blinkLabel 						= createDiv();
+	blinkLabel.innerText 			= "Blink";
+	blinkLabel.style.display 		= "table-cell";
+	blinkIt 						= createInput();
+	blinkIt.setAttribute("type", "checkbox");
+	blinkIt.checked 				= initSettings.settings.blink;
+	blinkIt.value 					= "Blink?";
+	blinkHolder.appendChild(blinkLabel);
+	blinkHolder.appendChild(blinkIt);
+	blinkHolder.appendChild(blinkLabel);
+	
 	bottomButtonContainer 					= createDiv();
 	bottomButtonContainer.style.width 		= "100%";
 	bottomButtonContainer.style.textAlign 	= "right";
 	bottomButtonContainer.style.marginTop 	= "20px";
 	saveCloseButton = createButton("save and close");
 	saveCloseButton.onclick = function() { 
+		initSettings.settings.blink = blinkIt.checked;
 		sf_write(JSON.stringify(initSettings), true, labels);
 		settingsContainer.style.display = "none";
 		dimmer.style.display = "none";
@@ -652,6 +673,7 @@ function settingWindow(e) {
 		settingsContainer.appendChild(buildAddLabels(settingsContainer, dimmer));
 	}
 	bottomButtonContainer.appendChild(refreshHolder);
+	bottomButtonContainer.appendChild(blinkHolder);
 	bottomButtonContainer.appendChild(addButton);
 	bottomButtonContainer.appendChild(saveCloseButton);
 	rulesCOntainer 					= createDiv();
@@ -806,8 +828,9 @@ function buildAddLabels(settingsContainer, dimmer) {
 	valueText.name 				= "value";
 	
 	advanceHolder 				= createDiv();
+	advanceHolder.id			= "advanceHolder";
 	advanceHolder.style.width 	= "100%";	
-	advanceHolder.style.display = "none";
+	//advanceHolder.style.display = "block";
 	checkAdvance 				= createInput();
 	checkAdvance.type 			= "checkbox";
 	checkLabel 					= createLabel();
@@ -818,11 +841,13 @@ function buildAddLabels(settingsContainer, dimmer) {
 	dynaLabel.innerText 		= "dynamic";
 	checkAdvance.onchange = function() {
 		if(checkAdvance.checked) {
+			captionLabel.innerText = "Caption:";
 			rulesHolder.appendChild(rulesLabel);
 			rulesHolder.appendChild(rulesText);
 			advanceHolder.appendChild(dynaAdvance);
 			advanceHolder.appendChild(dynaLabel);
 		} else {
+			captionLabel.innerText = "Account:";
 			rulesHolder.removeChild(rulesLabel);
 			rulesHolder.removeChild(rulesText);
 			if(dynaAdvance.checked) {
@@ -858,16 +883,26 @@ function buildAddLabels(settingsContainer, dimmer) {
 	buttonContainer.style.marginTop 	= "20px";
 	saveBtn = createButton("Add to list");
 	saveBtn.onclick = function() { 
-		if((typeof(captionText.value) == "undefined" || captionText.value == ""))alert("Account is required.");
+		if(checkAdvance.checked==false && checkAdvance.checked==false && (typeof(captionText.value) == "undefined" || captionText.value == "")) alert("Account is required");
+		else if(checkAdvance.checked && dynaAdvance.checked==false && (typeof(rulesText.value)=="undefined"||rulesText.value=="") && (typeof(captionText.value) == "undefined" || captionText.value == "")) alert("Caption and Rules is required.");
+		else if(dynaAdvance.checked && checkAdvance.checked && (typeof(rulesText.value)=="undefined"||rulesText.value=="")  && (typeof(varText.value)=="undefined"||varText.value=="") && (typeof(captionText.value) == "undefined" || captionText.value == "")) alert("Caption, Rules, and Value is required.");
 		else {
 			var val 	= {};
 			val.caption = captionText.value;
 			if(checkAdvance.checked && dynaAdvance.checked){
 				val.rule 		= rulesText.value;
 				val.color 		= colorText.value;
+				val.editMode 	= 3;
+				val.caption 	= captionText.value;
 				val.value 		= valueText.value;
-				val.editMode 	= 1;
 				val.variable 	= varText.value;
+			}else if(checkAdvance.checked){
+				val.rule 		= rulesText.value;
+				val.color 		= colorText.value;
+				val.editMode 	= 3;
+				val.caption 	= captionText.value;
+				val.value 		= "";
+				val.variable 	= "";
 			}else{
 				val.rule 		= "#ACCOUNT.toLowerCase().match('#XX'.toLowerCase()) || #PUBNAME.toLowerCase().match('#XX'.toLowerCase())";
 				val.color 		= colorText.value;
@@ -939,6 +974,13 @@ function startSLATimerProcess() { //timer
 	insertLegend(params.fcf+"_rolodex");
 	var slas = setInterval(getAllCaseStats,1000);
 	refreshRate(JSON.parse(_RESULT).settings.refreshRate);
+	
+	var localData = JSON.parse(sf_read(labels));
+	if(localData.settings.version!= initialSettings().settings.version) {
+		console.log("deleting data... applying new data.. refreshing browser.. now.");
+		setTimeout(sf_delete(labels), 2000);
+		setTimeout(history.go(0),4000);
+	}
 }
 
 function alterName(name) {
@@ -998,7 +1040,7 @@ function getAllCaseStats() {
 					for(var vars=0 ; vars<definedVariables.length ; vars++) rule = rule.replace(definedVariables[vars].variable, definedVariables[vars].value);
 					try{
 						if(eval(rule) && datePerCase[i]) {
-							if(itr >= 0 && itr < 5) tmpColor = rules[itr].color;
+							if(itr >= 0 && itr < 4) tmpColor = rules[itr].color;
 							else {
 								if(typeof(rules[itr].type)!="undefined"&&rules[itr].type=="FG") {
 									if(rules[itr].caption.match("Account Type"))
@@ -1025,15 +1067,15 @@ function getAllCaseStats() {
 					blinkDiv(elemx, colorsx);
 				}
 				//detect foreground rules for account type
-				if(typeof(accountTypePerCase[i]).offsetParent!="undefined"&&typeof(accountTypePerCase[i].offsetParent.getAttribute("colorsFG"))!="null"&&accountTypePerCase[i].offsetParent.getAttribute("colorsFG")) {
+				if(typeof(accountTypePerCase[i]).offsetParent!="undefined"&&typeof(accountTypePerCase[i].offsetParent.getAttribute("colorsfg"))!="null"&&accountTypePerCase[i].offsetParent.getAttribute("colorsfg")) {
                     accountTypePerCase[i].offsetParent.style.fontWeight = "900";
-					accountTypePerCase[i].offsetParent.style.color = accountTypePerCase[i].offsetParent.getAttribute("colorsFG");
+					accountTypePerCase[i].offsetParent.style.color = accountTypePerCase[i].offsetParent.getAttribute("colorsfg");
 				}
 				
 				//detect foreground rules for priority escalated cases
-				if(typeof(priorityEscalatedCases[i])!="undefined"&&typeof(priorityEscalatedCases[i].offsetParent.getAttribute("colorsFG"))!="undefined"&&priorityEscalatedCases[i].offsetParent.getAttribute("colorsFG")) {
+				if(typeof(priorityEscalatedCases[i])!="undefined"&&typeof(priorityEscalatedCases[i].offsetParent.getAttribute("colorsfg"))!="undefined"&&priorityEscalatedCases[i].offsetParent.getAttribute("colorsfg")) {
                     priorityEscalatedCases[i].offsetParent.style.fontWeight = "900";
-					priorityEscalatedCases[i].offsetParent.style.color = priorityEscalatedCases[i].offsetParent.getAttribute("colorsFG");
+					priorityEscalatedCases[i].offsetParent.style.color = priorityEscalatedCases[i].offsetParent.getAttribute("colorsfg");
 				}
 			}	
 		}
@@ -1161,7 +1203,7 @@ function checkTime(dateItem, dateFormat, resultDate) {
 	var tempDate;
 	var tempFormat;
 	var identifier = ":";
-	var isPM = false;
+	var isPM = undefined;
 	
 	var tempRes = resultDate.toLocaleString();
 	if(tempRes.indexOf("AM")>=0) {
@@ -1173,13 +1215,15 @@ function checkTime(dateItem, dateFormat, resultDate) {
 	}
 	if(dateItem.toLowerCase().indexOf("p")>=0)
 		isPM = true;
+	if(dateItem.toLowerCase().indexOf("a")>=0)
+		isPM = false;
 		
 	if(dateItem.indexOf(identifier)>=0) {
 		tempDate = dateItem.split(identifier);
 		tempFormat = dateFormat.split(identifier);
 		for(var i=0 ; i<tempDate.length; i++) {
 			if(tempFormat[i].toLowerCase().match("h")) {
-				if(isPM==false) {
+				if(typeof(isPM)!="undefined"&&isPM==false) {
 					tempDate[i] = tempDate[i].toLowerCase().replace("am", "");
 					if(parseInt(tempDate[i])>=12)
 						resultDate.setHours(parseInt(tempDate[i])-12);//what about 12:00 - there is no such thing as 12:00 it should be 0:00 to denote  noon =\ right?
@@ -1187,7 +1231,7 @@ function checkTime(dateItem, dateFormat, resultDate) {
 						resultDate.setHours(parseInt(tempDate[i]));
 				} else if(isPM) {
 					tempDate[i] = tempDate[i].toLowerCase().replace("pm", "");
-					if(parseInt(tempDate[i])>=12))
+					if(parseInt(tempDate[i])==12)
 						resultDate.setHours(parseInt(tempDate[i]));
 					else
 						resultDate.setHours(parseInt(tempDate[i])+12);
@@ -1208,7 +1252,10 @@ function checkTime(dateItem, dateFormat, resultDate) {
 function blinkDiv(elem, colors) {
 	var colorSize = colors.length;
 	var itr = getCurrentSeconds()%colorSize;
-	elem.style.background=colors[itr];
+	if(typeof(initSettings.settings.blink)&& initSettings.settings.blink)
+		elem.style.background=colors[itr];
+	else
+		elem.style.background=colors[0];
 }
 
 function getCurrentSeconds() { return  new Date().getSeconds();}
@@ -1221,8 +1268,8 @@ function getClrPrElem(elem, color, clrtype) {
 		if(typeof(elem)=="undefined") {console.log("elem is null");return;}
 		
 		if(typeof(clrtype)!="undefined"&&clrtype.match("FG")) {
-			if(elem.getAttribute("colorsFG")!=null) {
-				attrFG = elem.getAttribute("colorsFG");
+			if(elem.getAttribute("colorsfg")!=null) {
+				attrFG = elem.getAttribute("colorsfg");
 				clrsFG = attrFG.split(",");
 			}
 			if(color != "" || typeof(color) != "undefined" || color != null) {
@@ -1237,7 +1284,7 @@ function getClrPrElem(elem, color, clrtype) {
 					}
 				}
 				
-				elem.setAttribute("colorsFG", resultFG);
+				elem.setAttribute("colorsfg", resultFG);
 			}
 		} 
 		
@@ -1257,8 +1304,8 @@ function getClrPrElem(elem, color, clrtype) {
 				}
 			}
 			elem.setAttribute("colors", resultBG);
-			if(elem.getAttribute("colorsFG")!=null) {
-				elem.setAttribute("colorsFG", resultBG);
+			if(elem.getAttribute("colorsfg")!=null) {
+				elem.setAttribute("colorsfg", resultBG);
 			}
 		}
 		
