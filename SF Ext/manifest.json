@@ -9,7 +9,7 @@
   ],
   "content_scripts": [
     {
-      "matches": ["https://sizmek.my.salesforce.com/console/*"],      
+      "matches": ["https://sizmek.my.salesforce.com/*"],      
       "js": ["sfmod.js"],
 	  "all_frames": true,
 	  "run_at": "document_idle"
